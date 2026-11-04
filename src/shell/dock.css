@@ -1,0 +1,131 @@
+.dock {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: max(14px, env(safe-area-inset-bottom));
+  margin-inline: auto;
+  width: max-content;
+  max-width: calc(100vw - 20px);
+  z-index: 100;
+
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 26px;
+
+  background: rgb(18 16 28 / 0.55);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  box-shadow:
+    0 20px 50px -12px rgb(0 0 0 / 0.6),
+    inset 0 1px 0 rgb(255 255 255 / 0.18);
+  backdrop-filter: blur(22px) saturate(1.7);
+  -webkit-backdrop-filter: blur(22px) saturate(1.7);
+}
+
+.dock__link {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  color: #fff;
+  text-decoration: none;
+}
+
+/* @tech Container query units (cqw)
+   O tile (que muda de 46px a 78px pela magnificação, ver Dock.tsx) é um `container-type: inline-size`;
+   o glifo usa `font-size: 42cqw` = 42% da LARGURA DO TILE. Resultado: o ícone cresce junto com o tile sem
+   nenhuma linha de JavaScript e sem media query. */
+.dock__tile {
+  container-type: inline-size;
+  display: grid;
+  place-items: center;
+  border-radius: 28%;
+  color: #fff;
+  background:
+    radial-gradient(120% 120% at 20% 0%, color-mix(in oklab, var(--accent) 80%, white) 0%, transparent 55%),
+    color-mix(in oklab, var(--accent) 38%, #11101a);
+  border: 1px solid color-mix(in oklab, var(--accent) 60%, transparent);
+  box-shadow: 0 6px 18px -6px color-mix(in oklab, var(--accent) 70%, transparent);
+}
+
+.dock__glyph {
+  font: 700 42cqw/1 'Inter Variable', system-ui, sans-serif;
+  letter-spacing: -0.04em;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.35);
+}
+
+.dock__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+/* Tooltip */
+.dock__tip {
+  position: absolute;
+  bottom: calc(100% + 16px);
+  left: 50%;
+  translate: -50% 6px;
+  display: grid;
+  gap: 2px;
+  min-width: max-content;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font: 600 13px/1.2 'Inter Variable', system-ui, sans-serif;
+  color: #fff;
+  background: rgb(14 12 22 / 0.88);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    translate 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dock__tip b {
+  font-family: 'JetBrains Mono Variable', monospace;
+  color: var(--accent);
+  font-weight: 500;
+}
+.dock__tip small {
+  font-weight: 400;
+  font-size: 11.5px;
+  opacity: 0.6;
+}
+.dock__link:hover .dock__tip,
+.dock__link:focus-visible .dock__tip {
+  opacity: 1;
+  translate: -50% 0;
+}
+.dock__link:focus-visible {
+  outline: none;
+}
+.dock__link:focus-visible .dock__tile {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.dock__link {
+  flex: none; /* nunca encolhe: com 10 itens o dock rola em vez de espremer */
+}
+
+@media (max-width: 640px) {
+  .dock {
+    gap: 6px;
+    padding: 8px 10px;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none; /* some a barra de rolagem; o dock continua deslizável com o dedo */
+  }
+  .dock::-webkit-scrollbar {
+    display: none;
+  }
+  .dock__glyph {
+    font-size: 40cqw;
+  }
+  .dock__tip {
+    display: none;
+  }
+}

@@ -1,0 +1,1482 @@
+/*
+  ═══════════════════════════════════════════════════════════════════════════
+  prisma.css — página 02 (Prisma): CSS moderno, sem preprocessador e sem framework
+  ═══════════════════════════════════════════════════════════════════════════
+  Ordem do arquivo (procure pelos títulos "─────"):
+   @property → @keyframes → tokens/cores → progresso → header → hero (blobs, parallax) → seções/cartões
+   → reveals (view()) → container queries → :has() lab → âncoras/popover → FAQ (details) → cubo 3D
+   → carrossel nativo.
+  O JavaScript de Prisma.tsx só troca o tema e lê o slider de matiz; tudo o mais é CSS.
+
+  @tech @layer + escopo por classe
+  `@layer prisma { … }` põe TODAS as regras numa camada: camadas declaradas depois vencem as anteriores
+  independentemente da especificidade, então estas regras não brigam com o reset do Tailwind (camada `base`).
+  Além disso tudo está aninhado sob `.prisma`, impedindo vazamento para as outras páginas do SPA.
+  ═══════════════════════════════════════════════════════════════════════════
+*/
+@layer prisma;
+
+/* ───── Propriedades registradas: o navegador sabe o TIPO, então pode animar/interpolar ─────
+   @tech @property (propriedades tipadas)
+   Variável CSS comum é só texto: não dá para animá-la (o navegador não sabe interpolar "0deg" → "360deg").
+   `@property --angle { syntax: '<angle>' }` registra o TIPO; aí `@keyframes { to { --angle: 360deg } }` anima de
+   verdade — é o que faz o gradiente cônico GIRAR (borda dos cartões), o matiz DERIVAR (--shift) e o contador
+   do anel contar (--p, inteiro). `inherits: true` deixa os filhos enxergarem o valor animado. */
+@property --angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@property --hue {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 330;
+}
+@property --shift {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --p {
+  syntax: '<integer>';
+  inherits: true;
+  initial-value: 0;
+}
+
+@keyframes prisma-spin {
+  to {
+    --angle: 360deg;
+  }
+}
+@keyframes prisma-drift {
+  to {
+    --shift: 360;
+  }
+}
+@keyframes prisma-orbit {
+  to {
+    offset-distance: 100%;
+  }
+}
+
+@layer prisma {
+  .prisma {
+    /* ── Tokens ── */
+    --hue-base: 330;
+    --hue: calc(var(--hue-base) + var(--shift));
+    color-scheme: light;
+    interpolate-size: allow-keywords; /* height: auto ↔ 0 animável */
+
+    /* @tech light-dark() + color-scheme
+       `color-scheme: light` (e `dark` no [data-theme='dark']) diz ao navegador qual esquema vale; `light-dark(A, B)`
+       devolve A no claro e B no escuro — UM token por cor, sem duplicar blocos em @media (prefers-color-scheme).
+       As cores usam OKLCH com o matiz `--hue`, então o tema inteiro "gira" de cor ao mexer no slider. */
+    --bg: light-dark(oklch(0.975 0.014 var(--hue)), oklch(0.155 0.03 var(--hue)));
+    --fg: light-dark(oklch(0.22 0.04 var(--hue)), oklch(0.96 0.012 var(--hue)));
+    --soft: color-mix(in oklch, var(--fg) 62%, transparent);
+    --glass: light-dark(oklch(1 0 0 / 0.52), oklch(1 0 0 / 0.055));
+    --edge: light-dark(oklch(1 0 0 / 0.9), oklch(1 0 0 / 0.14));
+    --line: light-dark(oklch(0.3 0.04 var(--hue) / 0.14), oklch(1 0 0 / 0.12));
+    --shadow: light-dark(oklch(0.5 0.15 var(--hue) / 0.28), oklch(0 0 0 / 0.55));
+
+    /* @tech Cor relativa em OKLCH
+       `oklch(from var(--c1) l c calc(h + 70))` lê as coordenadas L, C, H de --c1 e devolve uma cor NOVA com o
+       matiz deslocado em 70°. Resultado: uma paleta de 3 cores harmônicas derivada de UM matiz base — mexer em
+       `--hue` recalcula tudo. OKLCH é perceptualmente uniforme (mesma luminosidade = mesmo "brilho" percebido).
+       Cores derivadas com "relative color syntax": mudam todas quando --hue muda */
+    --c1: oklch(0.76 0.17 var(--hue));
+    --c2: oklch(from var(--c1) l c calc(h + 70));
+    --c3: oklch(from var(--c1) l c calc(h + 140));
+
+    position: relative;
+    min-height: 100vh;
+    color: var(--fg);
+    background:
+      radial-gradient(60% 45% at 8% 0%, color-mix(in oklch, var(--c1) 26%, transparent), transparent),
+      radial-gradient(50% 40% at 100% 20%, color-mix(in oklch, var(--c3) 22%, transparent), transparent),
+      radial-gradient(60% 50% at 40% 100%, color-mix(in oklch, var(--c2) 18%, transparent), transparent),
+      var(--bg);
+    font-family: 'Inter Variable', system-ui, sans-serif;
+    font-optical-sizing: auto;
+    line-height: 1.55;
+    overflow-x: clip;
+
+    &[data-theme='dark'] {
+      color-scheme: dark;
+    }
+    /* checkbox do header liga a deriva de cor — só com :has(), sem JS */
+    &:has(#drift:checked) {
+      animation: prisma-drift 30s linear infinite;
+    }
+
+    /* @tech text-wrap: balance / pretty
+       `balance` equilibra o comprimento das linhas de títulos (sem "uma palavra sozinha" na última); `pretty` evita
+       viúvas/órfãs em parágrafos. Ambos só mudam a quebra de linha — zero custo de JS. */
+    & h1,
+    & h2,
+    & h3 {
+      margin: 0;
+      text-wrap: balance;
+    }
+    & p {
+      text-wrap: pretty;
+    }
+    & code {
+      font-family: 'JetBrains Mono Variable', monospace;
+      font-size: 0.86em;
+      padding: 0.1em 0.4em;
+      border-radius: 6px;
+      background: color-mix(in oklch, var(--c1) 18%, transparent);
+    }
+    & .prisma-defs {
+      position: absolute;
+    }
+  }
+
+  /* ───────── Barra de progresso (scroll-driven, sem JS) ─────────
+     @tech Scroll-driven: barra de progresso
+     `animation-timeline: scroll(root)` troca o relógio da animação: em vez de TEMPO, o progresso é a posição do
+     scroll da página (0% no topo → 100% no fim). A barra cresce com `scale: 0 → 1`, tudo no compositor — sem
+     listener de scroll, sem requestAnimationFrame, sem JS. */
+  .prisma .prisma-progress {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 200;
+    height: 4px;
+    /* @tech Interpolação de gradiente em OKLCH
+       `in oklch longer hue` pede ao navegador para interpolar no espaço OKLCH pelo caminho LONGO do matiz: o
+       gradiente passa por várias cores vivas, sem o cinza "lamacento" que o interpolador sRGB padrão cria no meio. */
+    background: linear-gradient(90deg in oklch longer hue, var(--c1), var(--c2));
+    transform-origin: 0 50%;
+    scale: 0 1;
+  }
+  /* @tech Progressive enhancement com @supports
+     Estilos que dependem de `animation-timeline` ficam dentro de `@supports (animation-timeline: …)`. Quem não tem
+     suporte vê a barra em `scale: 0` (invisível) e os cartões já no estado final: nada quebra, só perde o efeito. */
+  @supports (animation-timeline: scroll()) {
+    .prisma .prisma-progress {
+      animation: prisma-grow linear both;
+      animation-timeline: scroll(root);
+    }
+  }
+  @keyframes prisma-grow {
+    to {
+      scale: 1 1;
+    }
+  }
+
+  /* ───────── Header ───────── */
+  .prisma .prisma-head {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    /* @tech scroll-state container query
+       `container-type: scroll-state` torna o header um contêiner que "conhece" o estado de rolagem dele. Em
+       `.prisma-head__bar`, `@container scroll-state(stuck: top)` aplica vidro/sombra SÓ enquanto o header está
+       grudado no topo (position: sticky). Antes isso exigia IntersectionObserver + classe via JS. */
+    container-type: scroll-state; /* permite @container scroll-state(stuck: top) */
+    padding: 14px clamp(14px, 3vw, 40px);
+    padding-right: clamp(14px, 3vw, 40px);
+  }
+  .prisma .prisma-head__bar {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    max-width: 1180px;
+    margin-inline: auto;
+    margin-right: 160px;
+    padding: 10px 14px 10px 18px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    transition:
+      background-color 0.4s,
+      border-color 0.4s,
+      box-shadow 0.4s,
+      backdrop-filter 0.4s;
+
+    @container scroll-state(stuck: top) {
+      background: var(--glass);
+      border-color: var(--edge);
+      box-shadow: 0 14px 40px -18px var(--shadow);
+      backdrop-filter: blur(18px) saturate(1.5);
+    }
+  }
+  @media (max-width: 1280px) {
+    .prisma .prisma-head__bar {
+      margin-right: 0;
+      margin-top: 44px;
+    }
+  }
+  .prisma .prisma-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 750;
+    letter-spacing: -0.03em;
+    color: inherit;
+    text-decoration: none;
+
+    & i {
+      width: 18px;
+      height: 18px;
+      clip-path: polygon(50% 0, 100% 100%, 0 100%);
+      background: conic-gradient(from var(--angle) in oklch, var(--c1), var(--c2), var(--c3), var(--c1));
+      animation: prisma-spin 6s linear infinite;
+    }
+  }
+  .prisma .prisma-head nav {
+    display: flex;
+    gap: 4px;
+    margin-inline: auto;
+
+    & a {
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--soft);
+      text-decoration: none;
+      transition:
+        color 0.2s,
+        background-color 0.2s;
+    }
+    & a:hover {
+      color: var(--fg);
+      background: color-mix(in oklch, var(--c1) 18%, transparent);
+    }
+  }
+  .prisma .prisma-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+  }
+  .prisma .prisma-hue,
+  .prisma .prisma-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--soft);
+    font-family: 'JetBrains Mono Variable', monospace;
+    cursor: pointer;
+  }
+  .prisma .prisma-hue input {
+    width: 96px;
+    height: 6px;
+    appearance: none;
+    border-radius: 99px;
+    background: linear-gradient(90deg in oklch longer hue, oklch(0.78 0.17 0), oklch(0.78 0.17 359));
+    accent-color: var(--c1);
+
+    &::-webkit-slider-thumb {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid var(--c1);
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+    &::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid var(--c1);
+    }
+  }
+  .prisma .prisma-switch input {
+    accent-color: var(--c1);
+  }
+  .prisma .prisma-theme {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: var(--glass);
+    color: var(--fg);
+    font-size: 15px;
+    cursor: pointer;
+    transition: scale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    &:hover {
+      scale: 1.12;
+    }
+  }
+  @media (max-width: 900px) {
+    .prisma .prisma-head nav,
+    .prisma .prisma-hue span {
+      display: none;
+    }
+    .prisma .prisma-controls {
+      margin-left: auto;
+    }
+  }
+
+  /* ───────── HERO ───────── */
+  .prisma .prisma-hero {
+    position: relative;
+    display: grid;
+    align-content: center;
+    gap: 24px;
+    min-height: calc(100svh - 70px);
+    padding: 40px clamp(20px, 6vw, 96px) 140px;
+    isolation: isolate;
+
+    & h1 {
+      max-width: 9ch;
+      font-size: clamp(3.6rem, 12.5vw, 11.5rem);
+      font-weight: 800;
+      line-height: 0.88;
+      letter-spacing: -0.055em;
+      transition: filter 0.4s;
+    }
+    & h1:hover {
+      filter: url(#prisma-liquid); /* filtro SVG de deslocamento por turbulência */
+    }
+    & h1 span {
+      /* gradiente cônico que gira porque --angle é uma @property tipada */
+      background: conic-gradient(from var(--angle) in oklch, var(--c1), var(--c2), var(--c3), var(--c1));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: prisma-spin 8s linear infinite;
+    }
+  }
+  .prisma .prisma-kicker {
+    margin: 0;
+    font: 500 12px/1 'JetBrains Mono Variable', monospace;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: color-mix(in oklch, var(--c1) 70%, var(--fg));
+  }
+  .prisma .prisma-lead {
+    max-width: 52ch;
+    margin: 0;
+    font-size: clamp(1.05rem, 1.7vw, 1.3rem);
+    color: var(--soft);
+  }
+  .prisma .prisma-lead b {
+    color: var(--fg);
+    font-weight: 650;
+  }
+  .prisma .prisma-hint {
+    margin: 12px 0 0;
+    font-size: 0.9rem;
+    color: var(--soft);
+  }
+
+  /* Blobs "gooey": filtro SVG + motion path em CSS (offset-path)
+     @tech Motion path em CSS
+     Cada blob (`i`) percorre uma curva de Bézier definida em `offset-path: path('M … C …')`; a animação só
+     mexe em `offset-distance: 0 → 100%` (`prisma-orbit`). `animation-delay: var(--d)` (negativo, vindo do JSX)
+     espalha os 4 blobs pelo mesmo caminho. O `filter: url(#prisma-goo)` do container funde os círculos que se tocam. */
+  .prisma .prisma-blobs {
+    position: absolute;
+    inset: 4% 0 auto auto;
+    z-index: -1;
+    width: min(60vw, 640px);
+    aspect-ratio: 1;
+    filter: url(#prisma-goo);
+    contain: paint;
+
+    & i {
+      position: absolute;
+      width: 34%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--c1), var(--c2));
+      offset-path: path('M 90 300 C 90 40, 470 40, 470 300 S 90 560, 90 300');
+      offset-rotate: 0deg;
+      animation: prisma-orbit 24s linear infinite;
+      animation-delay: var(--d);
+    }
+    & i:nth-child(2) {
+      background: linear-gradient(135deg, var(--c2), var(--c3));
+      width: 26%;
+    }
+    & i:nth-child(3) {
+      background: linear-gradient(135deg, var(--c3), var(--c1));
+      width: 40%;
+    }
+    & i:nth-child(4) {
+      width: 20%;
+    }
+  }
+  @media (max-width: 800px) {
+    .prisma .prisma-blobs {
+      opacity: 0.55;
+      width: 90vw;
+    }
+  }
+
+  .prisma .prisma-hero__cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 18px;
+
+    & div {
+      display: grid;
+      gap: 2px;
+      padding: 14px 20px;
+      border-radius: 20px;
+      rotate: var(--tilt);
+      background: var(--glass);
+      border: 1px solid var(--edge);
+      backdrop-filter: blur(16px) saturate(1.5);
+      box-shadow: 0 24px 40px -22px var(--shadow);
+    }
+    & small {
+      font: 500 11px/1 'JetBrains Mono Variable', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--soft);
+    }
+    & b {
+      font: 650 1.4rem/1.2 'JetBrains Mono Variable', monospace;
+    }
+  }
+  /* parallax por scroll: cada cartão sobe numa velocidade diferente
+     @tech Parallax por scroll em CSS puro
+     Os 3 cartões do hero compartilham uma animação `prisma-parallax` ligada a `scroll(root)` e limitada a
+     `animation-range: 0 100vh` (só o primeiro viewport). A distância final vem de `--rise` (160, 300, 90 px,
+     definido inline no JSX): mesmo keyframe, velocidades diferentes. */
+  @supports (animation-timeline: scroll()) {
+    .prisma .prisma-hero__cards div {
+      animation: prisma-parallax linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 100vh;
+    }
+  }
+  @keyframes prisma-parallax {
+    to {
+      translate: 0 calc(var(--rise) * -1px);
+    }
+  }
+
+  /* ───────── Seções ───────── */
+  .prisma .prisma-sec {
+    max-width: 1280px;
+    margin-inline: auto;
+    padding: clamp(70px, 10vw, 140px) clamp(20px, 5vw, 72px);
+    scroll-margin-top: 60px;
+  }
+  .prisma .prisma-sec__head {
+    margin-bottom: clamp(32px, 5vw, 64px);
+
+    & h2 {
+      max-width: 20ch;
+      margin-top: 14px;
+      font-size: clamp(2rem, 5vw, 4rem);
+      font-weight: 750;
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+  }
+
+  /* ───────── Cartões de vidro + borda cônica animada ───────── */
+  .prisma .prisma-card {
+    position: relative;
+    min-width: 0;
+    padding: 26px;
+    border-radius: 28px;
+    background: var(--glass);
+    backdrop-filter: blur(18px) saturate(1.5);
+    box-shadow:
+      0 30px 60px -34px var(--shadow),
+      inset 0 1px 0 var(--edge);
+    isolation: isolate;
+
+    /* anel luminoso: gradiente cônico rotativo recortado por mask-composite
+       @tech Borda cônica rotativa
+       O pseudo-elemento `::before` cobre o cartão com um `conic-gradient(from var(--angle) …)`; `--angle` é a
+       @property animada (`prisma-spin`). A máscara usa duas camadas (`content-box` e a caixa inteira) combinadas com
+       `mask-composite: exclude`: sobra só o ANEL de 1,5px (padding) — o miolo vira transparente. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      padding: 1.5px;
+      border-radius: inherit;
+      background: conic-gradient(from var(--angle), transparent 55%, var(--c1), var(--c2), transparent);
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      mask-composite: exclude;
+      -webkit-mask-composite: xor;
+      animation: prisma-spin 5s linear infinite;
+      opacity: 0.45;
+      transition: opacity 0.4s;
+    }
+    &:hover::before {
+      opacity: 1;
+    }
+
+    & h3 {
+      margin: 8px 0 14px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    & pre {
+      margin: 0;
+      padding: 14px 16px;
+      border-radius: 14px;
+      overflow-x: auto;
+      font: 500 12.5px/1.65 'JetBrains Mono Variable', monospace;
+      color: var(--fg);
+      background: light-dark(oklch(0.2 0.05 var(--hue) / 0.06), oklch(0 0 0 / 0.35));
+    }
+    & pre code {
+      padding: 0;
+      background: none;
+    }
+  }
+  .prisma .prisma-card__n {
+    font: 500 12px/1 'JetBrains Mono Variable', monospace;
+    color: color-mix(in oklch, var(--c1) 80%, var(--fg));
+  }
+
+  .prisma .prisma-reveal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+    gap: 22px;
+    perspective: 1200px;
+  }
+
+  /* Entradas guiadas por scroll: cada .reveal usa uma @keyframes diferente (--fx)
+     @tech Scroll-driven: reveals com view()
+     `animation-timeline: view()` liga a animação à VISIBILIDADE do próprio elemento: 0% quando ele começa a
+     entrar na viewport, 100% quando sai. `animation-range: entry 0% cover 46%` deixa cada efeito
+     (subida, pop, wipe, blur, flip) visível durante a rolagem e o encerra com o cartão ainda inteiro
+     na tela. A keyframe é escolhida por `animation: var(--fx)` —
+     o JSX grava `--fx: prisma-rise|pop|wipe|blur|flip` em cada
+     cartão, então UMA regra produz 5 entradas diferentes. */
+  @supports (animation-timeline: view()) {
+    .prisma .reveal {
+      animation: var(--fx) linear both;
+      animation-timeline: view();
+      /* cover 46%: o efeito dura o bastante para ser visto e acaba com o cartão ainda na tela */
+      animation-range: entry 0% cover 46%;
+    }
+    @keyframes prisma-rise {
+      from {
+        opacity: 0;
+        translate: 0 90px;
+        scale: 0.94;
+      }
+    }
+    @keyframes prisma-pop {
+      from {
+        opacity: 0;
+        scale: 0.55;
+        rotate: -9deg;
+      }
+    }
+    @keyframes prisma-wipe {
+      from {
+        clip-path: inset(0 100% 0 0 round 28px);
+        opacity: 0.3;
+      }
+      to {
+        clip-path: inset(0 0 0 0 round 28px);
+      }
+    }
+    @keyframes prisma-blur {
+      from {
+        opacity: 0;
+        filter: blur(18px);
+        translate: 0 40px;
+      }
+    }
+    @keyframes prisma-flip {
+      from {
+        opacity: 0;
+        rotate: x 75deg;
+        transform-origin: 50% 100%;
+      }
+    }
+  }
+
+  /* ───────── Container queries ───────── */
+  .prisma .prisma-resizer {
+    width: min(100%, 780px);
+    min-width: 280px;
+    max-width: 100%;
+    padding: 18px;
+    overflow: auto;
+    resize: horizontal; /* o usuário arrasta e o componente responde */
+    border: 2px dashed var(--line);
+    border-radius: 34px;
+  }
+  .prisma .cq {
+    container: card / inline-size;
+  }
+  .prisma .cq-card {
+    display: grid;
+    gap: 1.2rem;
+    padding: clamp(14px, 5cqi, 34px);
+    border-radius: 26px;
+    background: var(--glass);
+    border: 1px solid var(--edge);
+    box-shadow: 0 30px 60px -34px var(--shadow);
+
+    & h3 {
+      font-size: clamp(1.3rem, 6.4cqi, 2.8rem);
+      font-weight: 750;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+    & p {
+      margin: 10px 0 0;
+      font-size: clamp(0.85rem, 2.4cqi, 1.05rem);
+      color: var(--soft);
+    }
+    & ul {
+      display: none;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 14px 0 0;
+      padding: 0;
+      list-style: none;
+      font: 500 11px/1 'JetBrains Mono Variable', monospace;
+    }
+    & li {
+      padding: 6px 10px;
+      border-radius: 99px;
+      background: color-mix(in oklch, var(--c2) 22%, transparent);
+    }
+  }
+  .prisma .cq-card__art {
+    display: none;
+    min-height: 140px;
+    border-radius: 18px;
+    background:
+      conic-gradient(from 120deg at 30% 70%, var(--c1), var(--c2), var(--c3), var(--c1)),
+      var(--c1);
+  }
+  .prisma .cq-card__tag {
+    display: inline-block;
+    margin-bottom: 8px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    font: 600 11px/1 'JetBrains Mono Variable', monospace;
+    background: color-mix(in oklch, var(--c1) 26%, transparent);
+  }
+  .prisma .cq-card__side {
+    display: none;
+    align-content: center;
+    justify-items: center;
+    text-align: center;
+    padding: 12px;
+    border-radius: 18px;
+    background: color-mix(in oklch, var(--c3) 20%, transparent);
+
+    & b {
+      font-size: clamp(2rem, 9cqi, 3.6rem);
+      letter-spacing: -0.05em;
+      line-height: 1;
+    }
+    & span {
+      font-size: 0.8rem;
+      color: var(--soft);
+    }
+  }
+  /* @tech Container queries + cqi
+     `.cq` é um contêiner (`container: card / inline-size`) e o `.cq-card` dentro dele muda de layout conforme a
+     LARGURA DO CONTÊINER, não da janela: `@container card (min-width: 480px)` → cartão com arte ao lado;
+     `(min-width: 700px)` → painel em colunas. A tipografia usa `cqi` (1% da largura do contêiner) e a caixa é
+     redimensionável por `resize: horizontal` para você ver a mágica ao vivo. */
+  @container card (min-width: 480px) {
+    .cq-card {
+      grid-template-columns: minmax(110px, 36%) 1fr;
+      align-items: center;
+    }
+    .cq-card__art {
+      display: block;
+      align-self: stretch;
+    }
+    .cq-card ul {
+      display: flex;
+    }
+  }
+  @container card (min-width: 700px) {
+    .cq-card {
+      grid-template-columns: minmax(110px, 26%) 1fr minmax(100px, 20%);
+    }
+    .cq-card__side {
+      display: grid;
+    }
+  }
+
+  /* ───────── :has() lab ─────────
+     @tech :has() como lógica de UI
+     `:has()` é o "seletor de pai": `.has-lab:has(#p2:checked)` troca o matiz do laboratório INTEIRO quando o rádio
+     do plano 2 está marcado; `.dimgrid:has(.tile:hover) .tile:not(:hover)` apaga os irmãos do tile sob o mouse;
+     `.prisma:has(#drift:checked)` liga a animação de deriva de cor da página toda via um checkbox do header.
+     Três comportamentos que antes exigiam estado em JavaScript. */
+  .prisma .has-lab {
+    /* --hue é @property → a troca de plano faz um morph suave de cor em TODA a paleta local */
+    --hue: 250;
+    --c1: oklch(0.76 0.17 var(--hue));
+    --c2: oklch(from var(--c1) l c calc(h + 70));
+    --c3: oklch(from var(--c1) l c calc(h + 140));
+    /* @tech Transição de @property (morph de matiz)
+       Como `--hue` foi registrada com `@property` (tipo <number>), `transition: --hue .9s` INTERPOLA o número:
+       ao trocar de plano, todas as cores derivadas (que dependem de --hue) deslizam suavemente em vez de pular. */
+    transition: --hue 0.9s ease;
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(20px, 4vw, 48px);
+    padding: clamp(18px, 3vw, 36px);
+    border-radius: 36px;
+    background:
+      radial-gradient(70% 90% at 0% 0%, color-mix(in oklch, var(--c1) 30%, transparent), transparent),
+      radial-gradient(60% 80% at 100% 100%, color-mix(in oklch, var(--c3) 26%, transparent), transparent),
+      var(--glass);
+    border: 1px solid var(--edge);
+    box-shadow: 0 40px 80px -40px var(--shadow);
+
+    &:has(#p1:checked) {
+      --hue: 175;
+    }
+    &:has(#p2:checked) {
+      --hue: 250;
+    }
+    &:has(#p3:checked) {
+      --hue: 335;
+    }
+  }
+  @media (max-width: 860px) {
+    .prisma .has-lab {
+      grid-template-columns: 1fr;
+    }
+  }
+  .prisma .plans {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .prisma .plan {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 12px;
+    padding: 20px 22px;
+    border-radius: 22px;
+    border: 1.5px solid var(--line);
+    background: color-mix(in oklch, var(--bg) 50%, transparent);
+    cursor: pointer;
+    transition:
+      border-color 0.3s,
+      translate 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 0.4s;
+
+    & input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    &:hover {
+      translate: 6px 0;
+    }
+    &:has(input:checked) {
+      border-color: var(--c1);
+      box-shadow:
+        0 0 0 4px color-mix(in oklch, var(--c1) 25%, transparent),
+        0 18px 40px -20px var(--shadow);
+      translate: 14px 0;
+    }
+    &:has(input:focus-visible) {
+      outline: 2px solid var(--fg);
+      outline-offset: 3px;
+    }
+  }
+  .prisma .plan__name {
+    font-size: 1.25rem;
+    font-weight: 750;
+    letter-spacing: -0.03em;
+  }
+  .prisma .plan__desc {
+    grid-column: 1;
+    font-size: 0.85rem;
+    color: var(--soft);
+  }
+  .prisma .plan__price {
+    grid-row: 1 / 3;
+    grid-column: 2;
+    align-self: center;
+    font-size: 0.85rem;
+    color: var(--soft);
+
+    & b {
+      font-size: 2rem;
+      letter-spacing: -0.05em;
+      color: var(--fg);
+    }
+  }
+
+  .prisma .has-lab__side {
+    display: grid;
+    gap: 22px;
+    align-content: start;
+  }
+  .prisma .dimgrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+
+    /* "se algum filho está em hover, os outros apagam" — impossível sem :has() */
+    &:has(.tile:hover) .tile:not(:hover) {
+      opacity: 0.35;
+      scale: 0.94;
+      filter: blur(1.5px) saturate(0.6);
+    }
+  }
+  .prisma .tile {
+    aspect-ratio: 1.5;
+    border: 1px solid var(--edge);
+    border-radius: 18px;
+    font: 650 0.95rem/1 'Inter Variable', sans-serif;
+    color: var(--fg);
+    cursor: pointer;
+    background: linear-gradient(145deg, color-mix(in oklch, var(--c1) 55%, transparent), color-mix(in oklch, var(--c3) 40%, transparent));
+    transition:
+      opacity 0.3s,
+      scale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 0.3s;
+
+    &:hover {
+      scale: 1.07;
+    }
+  }
+  .prisma .mini-form {
+    display: grid;
+    gap: 14px;
+
+    & button {
+      justify-self: start;
+      padding: 12px 22px;
+      border: 0;
+      border-radius: 99px;
+      font: 650 14px/1 'Inter Variable', sans-serif;
+      color: oklch(0.2 0.03 var(--hue));
+      background: linear-gradient(90deg in oklch, var(--c1), var(--c2));
+      cursor: pointer;
+    }
+  }
+  .prisma .field {
+    position: relative;
+    display: grid;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--soft);
+
+    & input,
+    & textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1.5px solid var(--line);
+      background: color-mix(in oklch, var(--bg) 60%, transparent);
+      color: var(--fg);
+      font: 500 15px/1.4 'Inter Variable', sans-serif;
+      outline: none;
+      resize: none;
+      transition: border-color 0.25s;
+    }
+    & textarea {
+      /* @tech field-sizing: content
+         `field-sizing: content` faz o <textarea>/<input> dimensionar-se pelo CONTEÚDO digitado: o campo cresce
+         linha a linha sozinho (antes: um listener `input` recalculando `scrollHeight`). */
+      field-sizing: content; /* cresce com o texto — sem JS */
+      min-height: 3rem;
+      max-height: 12rem;
+    }
+    & input:focus,
+    & textarea:focus {
+      border-color: var(--c1);
+    }
+    & em {
+      display: none;
+      font-style: normal;
+      font-size: 12px;
+    }
+    /* @tech :user-invalid / :user-valid
+       `:invalid` já nasce ativo (campo vazio obrigatório fica vermelho antes de o usuário digitar). `:user-invalid`
+       só vale DEPOIS da interação (blur/submit). Combinado com `:has()` mostramos a mensagem de erro/sucesso
+       sem JavaScript de validação.
+       :user-invalid só dispara depois que o usuário interage */
+    &:has(input:user-invalid) input {
+      border-color: oklch(0.65 0.22 25);
+    }
+    &:has(input:user-invalid) .field__msg {
+      display: block;
+      color: oklch(0.6 0.22 25);
+    }
+    &:has(input:user-valid) .field__ok {
+      display: block;
+      color: oklch(0.6 0.17 155);
+    }
+  }
+
+  /* ───────── Anchor positioning + popover + details ───────── */
+  .prisma .anchor-lab {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(24px, 5vw, 64px);
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .prisma .anchor-lab {
+      grid-template-columns: 1fr;
+    }
+  }
+  .prisma .anchor-lab__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding-top: 80px; /* espaço para os tooltips que abrem para cima */
+  }
+  .prisma .anchor-slot {
+    display: contents;
+  }
+  .prisma .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    border-radius: 99px;
+    border: 1px solid var(--edge);
+    background: var(--glass);
+    backdrop-filter: blur(14px);
+    color: var(--fg);
+    font: 600 14.5px/1 'Inter Variable', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 14px 30px -18px var(--shadow);
+    transition: scale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    &:hover {
+      scale: 1.05;
+    }
+    &:active {
+      scale: 0.97;
+    }
+    & span {
+      font: 500 11px/1 'JetBrains Mono Variable', monospace;
+      color: var(--c1);
+    }
+  }
+
+  .prisma .tip,
+  .prisma .menu {
+    /* reset do estilo padrão do popover (UA: inset:0; margin:auto) */
+    position: fixed;
+    inset: auto;
+    margin: 0;
+    padding: 14px 16px;
+    border: 1px solid var(--edge);
+    border-radius: 18px;
+    color: var(--fg);
+    background: light-dark(oklch(1 0 0 / 0.82), oklch(0.22 0.04 var(--hue) / 0.85));
+    backdrop-filter: blur(22px) saturate(1.6);
+    box-shadow: 0 30px 60px -20px var(--shadow);
+    font-size: 13.5px;
+
+    /* @tech Popover API + @starting-style
+       O atributo HTML `popover` (+ `popovertarget` no botão) joga o elemento na TOP LAYER: sem z-index, sem
+       portal, fecha com Esc/clique fora, foco gerenciado. Para animar, `&:popover-open` define o estado final e
+       `@starting-style` o inicial da ENTRADA; `display`/`overlay` com `allow-discrete` mantêm o elemento
+       visível durante a SAÍDA.
+       transição de entrada/saída de elementos da top layer */
+    opacity: 0;
+    scale: 0.88;
+    translate: 0 8px;
+    transition:
+      opacity 0.28s,
+      scale 0.38s cubic-bezier(0.34, 1.56, 0.64, 1),
+      translate 0.38s cubic-bezier(0.34, 1.56, 0.64, 1),
+      display 0.3s allow-discrete,
+      overlay 0.3s allow-discrete;
+
+    &:popover-open {
+      opacity: 1;
+      scale: 1;
+      translate: 0 0;
+
+      @starting-style {
+        opacity: 0;
+        scale: 0.88;
+        translate: 0 8px;
+      }
+    }
+  }
+  .prisma .tip {
+    width: max-content;
+    max-width: min(280px, 80vw);
+    line-height: 1.5;
+    /* @tech Anchor positioning
+       O botão declara `anchor-name: --chip-a` e o popover `position-anchor: --chip-a` (ambos inline no JSX). Com
+       `position-area: top` o navegador posiciona o popover ACIMA do botão — sem calcular coordenadas em JS nem
+       Popper/Floating UI. `position-try-fallbacks: flip-block` inverte para baixo se faltar espaço no topo.
+       ancorado ao botão correspondente (position-anchor vem inline) */
+    position-area: top;
+    margin-bottom: 12px;
+    position-try-fallbacks: flip-block; /* sem espaço em cima? vai para baixo */
+  }
+  .prisma .menu {
+    display: none;
+    position-area: bottom span-right;
+    margin-top: 10px;
+    min-width: 200px;
+    padding: 8px;
+    position-try-fallbacks: flip-block, flip-inline;
+
+    &:popover-open {
+      display: grid;
+    }
+    & a {
+      padding: 10px 12px;
+      border-radius: 10px;
+      color: inherit;
+      text-decoration: none;
+      font-weight: 550;
+    }
+    & a:hover {
+      background: color-mix(in oklch, var(--c1) 22%, transparent);
+    }
+  }
+
+  .prisma .faq {
+    display: grid;
+    gap: 10px;
+
+    & details {
+      border-radius: 20px;
+      border: 1px solid var(--edge);
+      background: var(--glass);
+      backdrop-filter: blur(14px);
+      overflow: clip;
+    }
+    & summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 22px;
+      font-weight: 650;
+      cursor: pointer;
+      list-style: none;
+    }
+    & summary::-webkit-details-marker {
+      display: none;
+    }
+    & summary::after {
+      content: '+';
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      font-size: 18px;
+      background: color-mix(in oklch, var(--c1) 25%, transparent);
+      transition: rotate 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    & details[open] summary::after {
+      rotate: 135deg;
+    }
+    /* @tech details exclusivo + interpolate-size
+       `<details name="faq">`: todos com o mesmo `name` formam um acordeão EXCLUSIVO (abrir um fecha os outros) —
+       zero JS. Para animar a altura de 0 a `auto`, `interpolate-size: allow-keywords` (no .prisma) libera a
+       transição para `auto` e `::details-content` é o pseudo-elemento que contém o miolo. */
+    & details::details-content {
+      block-size: 0;
+      overflow: clip;
+      transition:
+        block-size 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+        content-visibility 0.45s allow-discrete;
+    }
+    & details[open]::details-content {
+      block-size: auto; /* graças a interpolate-size: allow-keywords */
+    }
+    & details p {
+      margin: 0;
+      padding: 0 22px 20px;
+      color: var(--soft);
+    }
+  }
+
+  /* ───────── História 3D guiada por scroll ───────── */
+  .prisma .story {
+    position: relative;
+    padding: 60px 20px;
+    --s: min(30vmin, 280px);
+  }
+  .prisma .story__sticky {
+    display: grid;
+    gap: 40px;
+    justify-items: center;
+    max-width: 900px;
+    margin-inline: auto;
+  }
+  .prisma .story__scene {
+    perspective: 1200px;
+    display: grid;
+    place-items: center;
+    height: calc(var(--s) * 1.6);
+  }
+  /* @tech Cena 3D só com CSS
+     O cubo é um contêiner com `transform-style: preserve-3d` (os filhos mantêm a profundidade) e `perspective` no
+     pai. Cada face `.f1…f6` é um quadrado girado em um eixo (rotateY/rotateX) e empurrado `translateZ(metade da
+     aresta)`. O "vidro" vem de `backdrop-filter`. Nenhum canvas, nenhum WebGL. */
+  .prisma .cube {
+    position: relative;
+    width: var(--s);
+    height: var(--s);
+    transform-style: preserve-3d;
+    transform: rotateX(-24deg) rotateY(-34deg);
+
+    & .f {
+      position: absolute;
+      inset: 0;
+      border: 1px solid var(--edge);
+      border-radius: 6%;
+      background:
+        linear-gradient(135deg, color-mix(in oklch, var(--c1) 55%, transparent), color-mix(in oklch, var(--c3) 38%, transparent));
+      backdrop-filter: blur(3px);
+      box-shadow: inset 0 0 40px color-mix(in oklch, var(--c2) 40%, transparent);
+    }
+    & .f1 {
+      transform: translateZ(calc(var(--s) / 2));
+    }
+    & .f2 {
+      transform: rotateY(90deg) translateZ(calc(var(--s) / 2));
+    }
+    & .f3 {
+      transform: rotateY(180deg) translateZ(calc(var(--s) / 2));
+    }
+    & .f4 {
+      transform: rotateY(-90deg) translateZ(calc(var(--s) / 2));
+    }
+    & .f5 {
+      transform: rotateX(90deg) translateZ(calc(var(--s) / 2));
+    }
+    & .f6 {
+      transform: rotateX(-90deg) translateZ(calc(var(--s) / 2));
+    }
+    & .core {
+      position: absolute;
+      inset: 28%;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #fff, var(--c2) 60%, var(--c1));
+      filter: blur(5px);
+      box-shadow: 0 0 80px 20px color-mix(in oklch, var(--c2) 70%, transparent);
+    }
+  }
+  .prisma .story__ring {
+    --p: 100;
+    /* @tech Contador CSS animado por @property
+       `--p` é um <integer> registrado e animado de 0 a 100 pela timeline do scroll. `counter-reset: pct var(--p)`
+       copia esse número para um contador CSS e `content: counter(pct) '%'` o imprime — o "57%" do anel é TEXTO
+       GERADO POR CSS. O mesmo `--p` alimenta o `conic-gradient` do anel. */
+    counter-reset: pct var(--p); /* o número do contador vem da @property --p */
+    position: relative;
+    width: 112px;
+    aspect-ratio: 1;
+
+    /* anel: gradiente cônico recortado em "rosca" por máscara radial */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: conic-gradient(var(--c1) calc(var(--p) * 1%), color-mix(in oklch, var(--fg) 12%, transparent) 0);
+      mask: radial-gradient(circle, transparent 56%, #000 57%);
+      -webkit-mask: radial-gradient(circle, transparent 56%, #000 57%);
+    }
+    &::after {
+      content: counter(pct) '%';
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font: 650 20px/1 'JetBrains Mono Variable', monospace;
+      color: var(--fg);
+    }
+  }
+  .prisma .story__caps {
+    display: grid;
+    gap: 16px;
+    width: 100%;
+  }
+  .prisma .cap {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    padding: 18px 22px;
+    border-radius: 20px;
+    border: 1px solid var(--edge);
+    background: var(--glass);
+    backdrop-filter: blur(14px);
+    color: var(--soft);
+    font-size: 0.98rem;
+
+    & small {
+      font: 500 11px/1 'JetBrains Mono Variable', monospace;
+      color: var(--c1);
+    }
+    & b {
+      color: var(--fg);
+      font-size: 1.3rem;
+      letter-spacing: -0.03em;
+    }
+  }
+
+  /* Com suporte a scroll-driven: vira cena "pinada" de 400vh */
+  @supports (animation-timeline: view()) {
+    .prisma .story {
+      height: 400vh;
+      padding: 0;
+      /* @tech view-timeline nomeada
+         `view-timeline: --story` cria uma timeline NOMEADA a partir da visibilidade desta seção e a expõe aos
+         descendentes (`timeline-scope`/herança); cubo, anel e legendas usam `animation-timeline: --story` e andam
+         sincronizados por UMA única linha do tempo. */
+      view-timeline: --story block; /* linha do tempo NOMEADA, visível aos descendentes */
+    }
+    .prisma .story__sticky {
+      position: sticky;
+      top: 0;
+      height: 100svh;
+      max-width: none;
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: 12px;
+      padding: 84px 20px 110px; /* espaço para o header (cima) e o dock (baixo) */
+      overflow: clip;
+    }
+    .prisma .story__scene {
+      height: 100%;
+      min-height: 0;
+    }
+    .prisma .story__ring {
+      position: absolute;
+      top: 96px;
+      right: clamp(16px, 6vw, 96px);
+      width: 96px;
+    }
+    .prisma .story__caps {
+      position: relative;
+      height: 132px;
+      max-width: 620px;
+    }
+    .prisma .cap {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+    }
+    .prisma .cube {
+      animation: prisma-cube linear both;
+      animation-timeline: --story;
+      animation-range: cover 20% cover 80%;
+    }
+    .prisma .story__ring {
+      --p: 0;
+      animation: prisma-ring linear both;
+      animation-timeline: --story;
+      animation-range: cover 20% cover 80%;
+    }
+    .prisma .cap1,
+    .prisma .cap2,
+    .prisma .cap3 {
+      animation: prisma-cap linear both;
+      animation-timeline: --story;
+    }
+    .prisma .cap1 {
+      animation-range: cover 20% cover 40%;
+    }
+    .prisma .cap2 {
+      animation-range: cover 40% cover 60%;
+    }
+    .prisma .cap3 {
+      animation-range: cover 60% cover 80%;
+    }
+  }
+  @keyframes prisma-cube {
+    from {
+      transform: rotateX(-24deg) rotateY(-34deg) scale(0.75);
+    }
+    50% {
+      transform: rotateX(160deg) rotateY(180deg) scale(1.2);
+    }
+    to {
+      transform: rotateX(336deg) rotateY(326deg) scale(0.95);
+    }
+  }
+  @keyframes prisma-ring {
+    to {
+      --p: 100;
+    }
+  }
+  @keyframes prisma-cap {
+    0% {
+      opacity: 0;
+      translate: 0 40px;
+    }
+    18%,
+    82% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    100% {
+      opacity: 0;
+      translate: 0 -40px;
+    }
+  }
+
+  /* ───────── Carrossel CSS ───────── */
+  .prisma .carousel {
+    display: flex;
+    gap: 20px;
+    margin: 0;
+    padding: 20px 4px 28px;
+    list-style: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 20px;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+
+    /* @tech Carrossel CSS nativo
+       Base: `overflow-x: auto` + `scroll-snap-type: x mandatory`. Chrome 135+ gera, só com CSS, os marcadores
+       (`scroll-marker-group` + `li::scroll-marker`, com `:target-current` para o ativo) e as setas
+       (`::scroll-button(left|right)` com `content`). Sem suporte, continua um scroll-snap utilizável.
+       Carrossel nativo (Chrome 135+): marcadores e botões gerados pelo CSS */
+    scroll-marker-group: after;
+    &::scroll-marker-group {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding-top: 22px;
+    }
+    anchor-name: --carousel;
+    &::scroll-button(left) {
+      content: '←' / 'Anterior';
+      left: calc(anchor(left) + 14px);
+    }
+    &::scroll-button(right) {
+      content: '→' / 'Próximo';
+      right: calc(anchor(right) + 14px);
+    }
+    &::scroll-button(left),
+    &::scroll-button(right) {
+      position: fixed;
+      position-anchor: --carousel;
+      top: anchor(center);
+      translate: 0 -50%;
+      z-index: 2;
+      width: 46px;
+      height: 46px;
+      border: 1px solid var(--edge);
+      border-radius: 50%;
+      color: var(--fg);
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      font-size: 18px;
+      cursor: pointer;
+    }
+    &::scroll-button(left):disabled,
+    &::scroll-button(right):disabled {
+      opacity: 0.3;
+    }
+
+    & li {
+      position: relative;
+      flex: 0 0 min(78vw, 400px);
+      height: 300px;
+      display: grid;
+      align-content: end;
+      gap: 6px;
+      padding: 26px;
+      border-radius: 30px;
+      scroll-snap-align: center;
+      color: oklch(0.2 0.04 var(--hue));
+      background:
+        radial-gradient(90% 90% at 20% 0%, oklch(1 0 0 / 0.55), transparent 60%),
+        linear-gradient(
+          145deg in oklch,
+          oklch(0.82 0.15 calc(var(--hue) + var(--i) * 38)),
+          oklch(0.68 0.2 calc(var(--hue) + var(--i) * 38 + 70))
+        );
+      box-shadow: 0 30px 50px -30px var(--shadow);
+    }
+    & li span {
+      font: 500 12px/1 'JetBrains Mono Variable', monospace;
+      opacity: 0.7;
+    }
+    & li b {
+      font-size: 2.6rem;
+      letter-spacing: -0.05em;
+      line-height: 1;
+    }
+
+    & li::scroll-marker {
+      content: '';
+      width: 10px;
+      height: 10px;
+      border-radius: 99px;
+      background: color-mix(in oklch, var(--fg) 25%, transparent);
+      transition:
+        width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+        background-color 0.3s;
+    }
+    & li::scroll-marker:target-current {
+      width: 30px;
+      background: var(--c1);
+    }
+  }
+  @supports (animation-timeline: view()) {
+    .prisma .carousel li {
+      animation: prisma-slide linear both;
+      /* @tech view(inline) em slides
+         `view(inline)` mede a posição de CADA slide no eixo horizontal do scroller: ao se aproximar do centro
+         o slide ganha escala/opacidade (keyframes `prisma-slide`), criando o foco no item atual sem JS. */
+      animation-timeline: view(inline);
+    }
+  }
+  @keyframes prisma-slide {
+    0%,
+    100% {
+      scale: 0.82;
+      opacity: 0.45;
+      rotate: 0deg;
+    }
+    50% {
+      scale: 1;
+      opacity: 1;
+    }
+  }
+
+  .prisma .prisma-foot {
+    padding: 80px 24px 180px;
+    text-align: center;
+    color: var(--soft);
+    font-size: 1.05rem;
+
+    & b {
+      color: var(--fg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .prisma *,
+    .prisma *::before,
+    .prisma *::after {
+      animation-duration: 0.001s !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
+}

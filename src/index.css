@@ -1,0 +1,147 @@
+/*
+  ═══════════════════════════════════════════════════════════════════════════
+  index.css — CSS GLOBAL (carregado uma vez, em todas as rotas)
+  ═══════════════════════════════════════════════════════════════════════════
+  Seções
+   1. Tailwind v4 + @theme (tokens)       4. Transição de páginas (View Transitions)
+   2. @layer base (reset mínimo, Lenis)    5. Elementos persistentes entre páginas
+   3. Variáveis da transição (--vt-x/y)    6. prefers-reduced-motion
+  As páginas Pulse e Gravity usam Tailwind; as demais têm CSS próprio (`src/pages/<id>/<id>.css`).
+  Em SPA o CSS de uma página continua carregado nas outras → prefixe classes e @keyframes por página
+  (`prisma-*`, `lumen-*`, `nat-*`…) ou use `@layer`/`@scope`.
+  ═══════════════════════════════════════════════════════════════════════════
+
+  @tech Tailwind CSS v4 (CSS-first)
+  Não existe tailwind.config.js: `@import 'tailwindcss'` + `@theme { … }` declaram os tokens aqui mesmo
+  (cada `--color-*` vira utilitários `bg-*`, `text-*`; `--font-*` vira `font-*`) e o plugin
+  `@tailwindcss/vite` (vite.config.ts) faz o resto. O Tailwind varre o código-fonte sozinho atrás de classes.
+*/
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+  --font-chunk: 'Unbounded Variable', 'Inter Variable', sans-serif;
+
+  /* Paleta do dashboard (oklch → gamut P3 quando disponível) */
+  --color-ink-950: oklch(0.14 0.02 265);
+  --color-ink-900: oklch(0.18 0.025 265);
+  --color-ink-800: oklch(0.23 0.03 265);
+  --color-ink-700: oklch(0.31 0.035 265);
+  --color-mint: oklch(0.82 0.17 165);
+  --color-iris: oklch(0.68 0.2 285);
+  --color-amber-glow: oklch(0.84 0.16 80);
+  --color-rose-glow: oklch(0.7 0.21 12);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-expo: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    background: #07060d;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: clip;
+  }
+
+  /* Lenis precisa disso para não brigar com o scroll nativo */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+  .lenis.lenis-stopped {
+    overflow: clip;
+  }
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, #8b5cf6 70%, white);
+    color: #07060d;
+  }
+}
+
+/* ───────────── Transição de páginas (View Transitions API) ─────────────
+   @tech View Transitions API entre páginas
+   Como funciona: `<Link viewTransition>` (React Router) chama `document.startViewTransition()` ao navegar.
+   O navegador tira um "print" da página velha (`::view-transition-old(root)`) e monta a nova ao vivo
+   (`::view-transition-new(root)`); aqui animamos a NOVA com um `clip-path: circle()` que cresce de 0% a 150%
+   a partir de (--vt-x, --vt-y). Essas duas variáveis são gravadas em `Dock.tsx → setTransitionOrigin`
+   no instante do clique, então o círculo nasce exatamente embaixo do dedo/mouse. A página velha encolhe e
+   escurece (`vt-old`). Sem JavaScript de animação: só CSS. */
+:root {
+  --vt-x: 50%;
+  --vt-y: 100%;
+}
+
+::view-transition-group(root) {
+  animation-duration: 0.9s;
+  animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
+}
+::view-transition-old(root) {
+  animation: vt-old 0.9s cubic-bezier(0.76, 0, 0.24, 1) both;
+  z-index: 1;
+}
+::view-transition-new(root) {
+  animation: vt-reveal 0.9s cubic-bezier(0.76, 0, 0.24, 1) both;
+  z-index: 2;
+}
+@keyframes vt-reveal {
+  from {
+    clip-path: circle(0% at var(--vt-x) var(--vt-y));
+  }
+  to {
+    clip-path: circle(150% at var(--vt-x) var(--vt-y));
+  }
+}
+@keyframes vt-old {
+  to {
+    transform: scale(0.94);
+    filter: blur(6px) brightness(0.6);
+  }
+}
+
+/* @tech view-transition-name para elementos persistentes
+   Dar `view-transition-name` a um elemento o tira do snapshot "root": ele ganha seu próprio par
+   old/new. Como dock e botão de técnicas existem nas DUAS páginas, anulamos a animação (duration 0)
+   e escondemos o "old" — o resultado é que eles ficam parados enquanto o resto se revela em círculo. */
+.vt-persist-dock {
+  view-transition-name: atlas-dock;
+}
+.vt-persist-tech {
+  view-transition-name: atlas-tech;
+}
+::view-transition-group(atlas-dock),
+::view-transition-group(atlas-tech) {
+  animation-duration: 0s;
+  z-index: 10;
+}
+::view-transition-old(atlas-dock),
+::view-transition-old(atlas-tech) {
+  display: none;
+}
+::view-transition-new(atlas-dock),
+::view-transition-new(atlas-tech) {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

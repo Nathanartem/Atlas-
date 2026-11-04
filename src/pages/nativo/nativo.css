@@ -1,0 +1,614 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   nativo.css — visual "ficha técnica": papel branco, grade de projeto, azul Klein e linhas finas
+   ═══════════════════════════════════════════════════════════════════════════
+   Convenção: prefixo `nat-`. Paleta em .nat: --ink, --blue, --ok, --no, --grid.
+   Técnicas de CSS usadas aqui (todas sem biblioteca):
+     • subgrid ......... .nat-spec (cartões alinham cabeçalho/título/corpo entre colunas vizinhas)
+     • color-mix() ..... estados ok/erro derivados de uma cor só
+     • :has() .......... destaca o cartão que contém um campo focado
+     • text-wrap: balance/pretty, accent-color, field-sizing, resize
+   ═══════════════════════════════════════════════════════════════════════════ */
+.nat {
+  --ink: #0b0b0f;
+  --ink-soft: rgb(11 11 15 / 0.62);
+  --blue: #2f4bff;
+  --ok: #0d9a5f;
+  --no: #c93b3b;
+  --grid: rgb(11 11 15 / 0.07);
+  --line: rgb(11 11 15 / 0.85);
+
+  min-height: 100svh;
+  padding: 0 clamp(16px, 4vw, 56px) 170px;
+  color: var(--ink);
+  font-family: 'Inter Variable', system-ui, sans-serif;
+  /* papel quadriculado: duas linhas finas a cada 32px */
+  background:
+    linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 32px 32px,
+    #fcfcfa;
+  overflow-x: clip;
+}
+.nat *,
+.nat *::before,
+.nat *::after {
+  box-sizing: border-box;
+}
+.nat code,
+.nat-mono {
+  font-family: 'JetBrains Mono Variable', monospace;
+}
+.nat code {
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: rgb(47 75 255 / 0.1);
+  font-size: 0.88em;
+}
+
+/* ───────── Hero ───────── */
+.nat-hero {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 100px 0 40px;
+
+  & h1 {
+    margin: 10px 0 20px;
+    font: 900 clamp(5rem, 17vw, 15rem) / 0.82 'Inter Variable', sans-serif;
+    letter-spacing: -0.07em;
+  }
+}
+.nat-hero__n {
+  margin-right: 0.08em;
+  color: transparent;
+  -webkit-text-stroke: 2px var(--blue);
+}
+.nat-eyebrow {
+  margin: 0;
+  font: 500 12px/1 'JetBrains Mono Variable', monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--blue);
+}
+.nat-lede {
+  max-width: 62ch;
+  margin: 0;
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  line-height: 1.6;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+
+  & b {
+    color: var(--ink);
+  }
+}
+
+/* ───────── Matriz de suporte ───────── */
+.nat-matrix {
+  max-width: 1280px;
+  margin: 30px auto 50px;
+  padding: 24px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+}
+.nat-matrix__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1.5px solid var(--line);
+
+  & h2 {
+    margin: 0;
+    font: 800 clamp(1.6rem, 3vw, 2.4rem) / 1 'Inter Variable', sans-serif;
+    letter-spacing: -0.04em;
+  }
+}
+.nat-matrix__score {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+
+  & b {
+    font: 900 3rem/1 'Inter Variable', sans-serif;
+    letter-spacing: -0.05em;
+    color: var(--blue);
+  }
+  & span {
+    font: 500 1.1rem/1 'JetBrains Mono Variable', monospace;
+  }
+  & small {
+    font: 400 11px/1 'JetBrains Mono Variable', monospace;
+    color: var(--ink-soft);
+  }
+}
+.nat-matrix__groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 22px 28px;
+
+  & h3 {
+    margin: 0 0 8px;
+    font: 500 10.5px/1 'JetBrains Mono Variable', monospace;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  & ul {
+    display: grid;
+    gap: 5px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  & li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+  & li i {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border: 1.5px solid var(--no);
+    border-radius: 50%;
+  }
+  & li[data-ok] {
+    color: var(--ink);
+  }
+  & li[data-ok] i {
+    border-color: var(--ok);
+    background: var(--ok);
+  }
+}
+
+/* ───────── Grade de laboratórios (subgrid) ───────── */
+.nat-labs {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+.nat-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: 20px;
+  row-gap: 0; /* o respiro vertical vem do margin-bottom dos cartões */
+}
+
+/* @tech CSS subgrid (linhas compartilhadas entre cartões)
+   O cartão ocupa 4 linhas da grade-pai (cabeçalho, título, api, corpo) e herda os tamanhos delas com
+   `grid-template-rows: subgrid`. Cartões vizinhos ficam com título, selo e corpo ALINHADOS mesmo com
+   conteúdos de alturas diferentes — algo que flexbox/grid simples não faz. */
+.nat-spec {
+  grid-column: span 6;
+  grid-row: span 4;
+  display: grid;
+  grid-template-rows: subgrid;
+  gap: 0;
+  margin-bottom: 20px;
+  padding: 18px 20px 20px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  box-shadow: 5px 5px 0 var(--blue);
+  min-width: 0;
+  transition: box-shadow 0.2s;
+
+  /* :has(): cartão com campo focado ganha sombra preta (foco "sobe" para o contêiner) */
+  &:has(:focus-visible) {
+    box-shadow: 5px 5px 0 var(--ink);
+  }
+  & > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  & h3 {
+    margin: 0;
+    font: 800 clamp(1.15rem, 1.9vw, 1.5rem) / 1.1 'Inter Variable', sans-serif;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+  & .nat-spec__api {
+    margin: 6px 0 14px;
+    font: 500 11.5px/1.4 'JetBrains Mono Variable', monospace;
+    color: var(--blue);
+  }
+}
+.nat-spec--wide {
+  grid-column: 1 / -1;
+}
+.nat-spec__body {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+}
+.nat-spec__fig {
+  font: 500 10.5px/1 'JetBrains Mono Variable', monospace;
+  letter-spacing: 0.16em;
+  color: var(--ink-soft);
+}
+
+.nat-badge {
+  padding: 3px 7px;
+  border-radius: 3px;
+  font: 600 9.5px/1 'JetBrains Mono Variable', monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.nat-badge--ok {
+  background: color-mix(in oklab, var(--ok) 16%, white);
+  color: var(--ok);
+}
+.nat-badge--no {
+  background: color-mix(in oklab, var(--no) 14%, white);
+  color: var(--no);
+}
+
+/* ───────── Controles dentro dos cartões ───────── */
+.nat textarea,
+.nat input:not([type='range']):not([type='checkbox']) {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1.5px solid var(--line);
+  border-radius: 0;
+  background: #fff;
+  color: inherit;
+  font: 400 13px/1.45 'JetBrains Mono Variable', monospace;
+}
+/* @tech field-sizing: content e :has() em formulários
+   `field-sizing: content` faz o textarea crescer com o texto (sem JS de auto-resize) e o `:has(:focus-visible)`
+   do .nat-spec destaca o cartão inteiro quando QUALQUER campo dentro dele recebe foco pelo teclado. */
+.nat textarea {
+  resize: vertical;
+  field-sizing: content; /* cresce com o texto, sem JavaScript */
+  min-height: 3.2em;
+  max-height: 14em;
+}
+.nat textarea:focus-visible,
+.nat input:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+.nat input[type='range'] {
+  width: 100%;
+  accent-color: var(--blue);
+}
+.nat-field {
+  display: grid;
+  gap: 5px;
+
+  & span {
+    font: 500 10.5px/1 'JetBrains Mono Variable', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+}
+.nat-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+
+  & input {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+  }
+}
+.nat-btn {
+  padding: 8px 14px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font: 600 12.5px/1 'Inter Variable', sans-serif;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover:not(:disabled) {
+    background: var(--ink);
+    color: #fff;
+  }
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  &[aria-pressed='true'],
+  &.nat-btn--accent {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: #fff;
+  }
+}
+.nat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  & button {
+    padding: 6px 12px;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    background: #fff;
+    font: 500 12px/1 'JetBrains Mono Variable', monospace;
+    cursor: pointer;
+  }
+  & button[aria-pressed='true'] {
+    background: var(--ink);
+    color: #fff;
+  }
+}
+.nat-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* resultados "rótulo → valor" */
+.nat-outs {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+.nat-outs--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 0;
+  gap: 8px;
+}
+.nat-outs--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 0;
+  gap: 8px;
+}
+.nat-out {
+  display: grid;
+  grid-template-columns: minmax(70px, 120px) 1fr;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--grid);
+  font-size: 12.5px;
+
+  & dt {
+    font: 500 10.5px/1.6 'JetBrains Mono Variable', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  & dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+}
+/* variantes em colunas: o rótulo fica em cima do valor */
+.nat-outs--3 .nat-out,
+.nat-outs--4 .nat-out {
+  grid-template-columns: 1fr;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--grid);
+  background: rgb(47 75 255 / 0.04);
+
+  & dd {
+    font-size: 15px;
+    font-weight: 700;
+  }
+}
+
+.nat-bar {
+  height: 8px;
+  border: 1.5px solid var(--line);
+
+  & i {
+    display: block;
+    height: 100%;
+    background: var(--blue);
+    transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+.nat-swatch {
+  height: 72px;
+  border: 1.5px solid var(--line);
+  transition: background 0.25s;
+}
+.nat-split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  min-width: 0;
+}
+.nat-peers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+
+  & li {
+    padding: 5px 10px;
+    border: 1.5px solid var(--line);
+    font: 500 12px/1 'JetBrains Mono Variable', monospace;
+  }
+  & li[data-me] {
+    background: var(--ink);
+    color: #fff;
+  }
+  & b {
+    color: #ffc400;
+  }
+}
+.nat-log {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+
+  & li {
+    display: grid;
+    gap: 2px;
+    padding: 8px 10px;
+    border: 1px solid var(--grid);
+    background: #fafaf7;
+    font-size: 13px;
+  }
+  & li[data-mine] {
+    border-color: var(--blue);
+    background: rgb(47 75 255 / 0.06);
+  }
+  & small {
+    font: 400 10.5px/1 'JetBrains Mono Variable', monospace;
+    color: var(--ink-soft);
+  }
+}
+
+.nat-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 12.5px/1.4 'JetBrains Mono Variable', monospace;
+
+  & th,
+  & td {
+    padding: 8px 10px;
+    border: 1px solid var(--grid);
+    text-align: left;
+  }
+  & th {
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: #fafaf7;
+  }
+  & tr[data-bad] td {
+    background: color-mix(in oklab, var(--no) 10%, white);
+    color: var(--no);
+    font-weight: 700;
+  }
+}
+
+/* Core Web Vitals */
+.nat-vitals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+
+  & div {
+    padding: 10px 12px;
+    border: 1.5px solid var(--line);
+  }
+  & dt {
+    font: 500 10px/1 'JetBrains Mono Variable', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  & dd {
+    margin: 6px 0 0;
+    font: 800 1.2rem/1.1 'Inter Variable', sans-serif;
+    letter-spacing: -0.03em;
+  }
+  & div[data-grade='good'] {
+    border-color: var(--ok);
+    background: color-mix(in oklab, var(--ok) 8%, white);
+  }
+  & div[data-grade='warn'] {
+    border-color: #d79a00;
+    background: color-mix(in oklab, #d79a00 10%, white);
+  }
+  & div[data-grade='bad'] {
+    border-color: var(--no);
+    background: color-mix(in oklab, var(--no) 10%, white);
+  }
+}
+
+/* matchMedia + ResizeObserver */
+.nat-queries {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  & li {
+    display: grid;
+    grid-template-columns: 12px 1fr;
+    align-items: center;
+    column-gap: 8px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+  & li i {
+    width: 9px;
+    height: 9px;
+    border: 1.5px solid var(--ink-soft);
+    border-radius: 50%;
+  }
+  & li code {
+    grid-column: 2;
+    background: none;
+    padding: 0;
+    font-size: 10px;
+    opacity: 0.7;
+  }
+  & li[data-on] {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  & li[data-on] i {
+    border-color: var(--blue);
+    background: var(--blue);
+  }
+}
+.nat-resize {
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 120px;
+  max-width: 100%;
+  height: 120px;
+  min-height: 70px;
+  margin-bottom: 12px;
+  border: 1.5px dashed var(--blue);
+  background: rgb(47 75 255 / 0.05);
+  text-align: center;
+  resize: both;
+  overflow: auto;
+
+  & span {
+    font: 700 1.1rem/1 'JetBrains Mono Variable', monospace;
+  }
+  & small {
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+}
+
+@media (max-width: 860px) {
+  .nat-spec {
+    grid-column: 1 / -1;
+  }
+  .nat-outs--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .nat-outs--3 {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 520px) {
+  .nat-out {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

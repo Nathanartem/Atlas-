@@ -1,0 +1,679 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   lumen.css — estilos da página 01 (Lumen)
+   ═══════════════════════════════════════════════════════════════════════════
+   Seções do arquivo: tokens → botões → hero → marquee → números → mundos (bento) → stack sticky → footer.
+   Prefixo `lumen-` em tudo (o CSS de página continua global num SPA).
+
+   @tech CSS nesting nativo
+   Seletores aninhados com `&` (ex.: `.lumen { & em { … } }`, `.lumen-btn { &:hover { … } }`) direto no CSS,
+   sem Sass/PostCSS. O Vite 8 (lightningcss) deixa o aninhamento como está nos navegadores que o suportam.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.lumen {
+  --bg: #07060d;
+  --fg: #f2f0fa;
+  --muted: rgb(242 240 250 / 0.6);
+  --display: 'Bricolage Grotesque Variable', 'Inter Variable', sans-serif;
+  --serif: 'Instrument Serif', Georgia, serif;
+  --mono: 'JetBrains Mono Variable', monospace;
+
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Inter Variable', system-ui, sans-serif;
+  overflow-x: clip;
+
+  & em {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+  }
+  & code {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    padding: 0.15em 0.5em;
+    border-radius: 6px;
+    background: rgb(255 255 255 / 0.08);
+  }
+}
+
+.lumen-eyebrow {
+  margin: 0 0 16px;
+  font: 500 12px/1 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a78bfa;
+}
+
+/* ───────────── BOTÕES ───────────── */
+.lumen-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 26px;
+  border-radius: 999px;
+  font: 600 15px/1 'Inter Variable', sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    background-color 0.3s,
+    color 0.3s,
+    border-color 0.3s;
+}
+.lumen-btn--solid {
+  color: #0b0818;
+  background: #fff;
+  &:hover {
+    background: #c4b5fd;
+  }
+}
+.lumen-btn--ghost {
+  color: #fff;
+  border-color: rgb(255 255 255 / 0.3);
+  background: rgb(255 255 255 / 0.05);
+  backdrop-filter: blur(10px);
+  &:hover {
+    border-color: #fff;
+    background: rgb(255 255 255 / 0.12);
+  }
+}
+
+/* ───────────── HERO ───────────── */
+.lumen-hero {
+  position: relative;
+  height: 100svh;
+  min-height: 640px;
+  display: grid;
+  align-items: end;
+  overflow: clip;
+  isolation: isolate;
+}
+.lumen-hero__shader {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  transform-origin: 50% 60%;
+  background: radial-gradient(circle at 30% 30%, #2a1066, #07060d 70%); /* fallback sem WebGL */
+}
+.lumen-hero__canvas {
+  position: absolute;
+  inset: 0;
+}
+.lumen-hero__shade {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(to top, #07060d 0%, transparent 38%),
+    radial-gradient(120% 80% at 50% 0%, transparent 40%, rgb(7 6 13 / 0.5));
+}
+.lumen-hero__content {
+  padding: clamp(24px, 5vw, 72px);
+  padding-bottom: clamp(96px, 14vh, 140px);
+  display: grid;
+  gap: 22px;
+  justify-items: start;
+}
+.lumen-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font: 500 12px/1 var(--mono);
+  letter-spacing: 0.04em;
+  background: rgb(255 255 255 / 0.07);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  backdrop-filter: blur(12px);
+
+  & i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 0 0 #34d399;
+    animation: lumen-ping 2s infinite;
+  }
+}
+@keyframes lumen-ping {
+  70% {
+    box-shadow: 0 0 0 9px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+/* @tech mix-blend-mode: difference no título
+   `mix-blend-mode: difference` subtrai a cor do título (branco) da do que está ATRÁS (o shader): sobre áreas
+   escuras o texto fica claro; sobre áreas claras ele INVERTE para escuro. Contraste garantido sem calcular nada.
+   `font-stretch: 78%` usa o eixo de largura da Bricolage Grotesque (fonte variável). */
+.lumen-title,
+.lumen-sub,
+.lumen-reveal {
+  /* escondidos até o GSAP: senão o texto aparece inteiro e some no frame seguinte (pisca) */
+  opacity: 0;
+}
+.lumen-title {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 800;
+  font-stretch: 78%;
+  font-size: clamp(5.5rem, 26vw, 24rem);
+  line-height: 0.78;
+  letter-spacing: -0.04em;
+  color: #fff;
+  mix-blend-mode: difference;
+  /* SplitText cria máscaras por caractere; line-height 0.78 cortaria a base das letras */
+  padding-bottom: 0.18em;
+}
+.lumen-sub {
+  max-width: 54ch;
+  margin: 0;
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+  line-height: 1.55;
+  color: rgb(242 240 250 / 0.82);
+  text-wrap: pretty;
+
+  & em {
+    font-size: 1.15em;
+    color: #fff;
+  }
+}
+.lumen-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.lumen-hero__scroll {
+  position: absolute;
+  right: clamp(24px, 5vw, 72px);
+  bottom: clamp(96px, 14vh, 140px);
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  color: var(--muted);
+
+  & span {
+    width: 1px;
+    height: 64px;
+    background: linear-gradient(#fff, transparent);
+    transform-origin: top;
+    animation: lumen-line 2.2s cubic-bezier(0.76, 0, 0.24, 1) infinite;
+  }
+}
+@keyframes lumen-line {
+  0% {
+    transform: scaleY(0);
+  }
+  50% {
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+  51% {
+    transform-origin: bottom;
+  }
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+}
+
+/* ───────────── MARQUEE ───────────── */
+.lumen-marquee {
+  overflow: clip;
+  padding-block: 28px;
+  border-block: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.02);
+}
+.lumen-marquee__track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+/* @tech Texto com gradiente e contorno
+   Dois truques de tipografia só em CSS: no marquee, `-webkit-text-stroke` desenha só o CONTORNO das letras
+   (as palavras pares ficam vazadas, as ímpares cheias); nos números (.lumen-numbers strong) um gradiente de
+   fundo + `background-clip: text` + `color: transparent` "pinta" as letras com o gradiente. */
+.lumen-marquee__row {
+  display: flex;
+  flex-shrink: 0;
+
+  & span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    padding-right: 0.6em;
+    white-space: nowrap;
+    font-family: var(--display);
+    font-weight: 700;
+    font-stretch: 80%;
+    font-size: clamp(2.6rem, 7vw, 6rem);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    text-transform: uppercase;
+    color: transparent;
+    -webkit-text-stroke: 1.5px rgb(255 255 255 / 0.75);
+  }
+  & span:nth-child(even) {
+    color: #fff;
+    -webkit-text-stroke: 0;
+  }
+  & b {
+    color: #8b5cf6;
+    font-size: 0.5em;
+    -webkit-text-stroke: 0;
+    padding-inline: 0.4em;
+  }
+}
+
+/* ───────────── NÚMEROS ───────────── */
+.lumen-numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1px;
+  background: rgb(255 255 255 / 0.1);
+  border-bottom: 1px solid rgb(255 255 255 / 0.1);
+
+  & > div {
+    display: grid;
+    gap: 6px;
+    padding: clamp(32px, 5vw, 64px) clamp(24px, 3vw, 48px);
+    background: var(--bg);
+  }
+  & strong {
+    font: 800 clamp(3.4rem, 8vw, 7rem) / 0.95 var(--display);
+    font-stretch: 80%;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(120deg, #fff 20%, #a78bfa 60%, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  & > div > span {
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+  & small {
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+}
+
+/* ───────────── MUNDOS (cards) ───────────── */
+.lumen-worlds,
+.lumen-stack {
+  padding: clamp(80px, 12vw, 160px) clamp(20px, 5vw, 72px);
+
+  & header h2 {
+    margin: 0 0 clamp(36px, 5vw, 72px);
+    max-width: 14ch;
+    font: 700 clamp(2.6rem, 7vw, 6rem) / 0.98 var(--display);
+    font-stretch: 85%;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+  & header em {
+    font-size: 1.1em;
+    color: #c4b5fd;
+  }
+}
+/* @tech Bento grid + color-mix()
+   Grade de 6 colunas; cada card ocupa 2, 3 ou 4 colunas (`.lumen-span-*`) — o desenho "bento". `minmax(0,1fr)`
+   impede que conteúdo largo estoure a coluna. Cada card recebe UMA cor (`--accent`, vinda de pages.ts) e todas
+   as demais (fundo, borda, tags, brilho) são derivadas com `color-mix(in oklab, var(--accent) X%, …)`:
+   trocar a cor de uma página muda o card inteiro de forma coerente. */
+.lumen-worlds__grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 18px;
+  perspective: 1400px;
+}
+.lumen-span-4 {
+  grid-column: span 4;
+}
+.lumen-span-3 {
+  grid-column: span 3;
+}
+.lumen-span-2 {
+  grid-column: span 2;
+}
+@media (max-width: 960px) {
+  .lumen-span-4,
+  .lumen-span-3,
+  .lumen-span-2 {
+    grid-column: span 6;
+  }
+}
+@media (min-width: 640px) and (max-width: 960px) {
+  .lumen-span-2,
+  .lumen-span-3 {
+    grid-column: span 3;
+  }
+  .lumen-span-4 {
+    grid-column: span 6;
+  }
+}
+
+.lumen-card {
+  transform-style: preserve-3d;
+  will-change: transform;
+
+  & a {
+    --mx: 50%;
+    --my: 50%;
+    position: relative;
+    display: grid;
+    align-content: end;
+    gap: 8px;
+    min-height: 340px;
+    height: 100%;
+    padding: 28px;
+    border-radius: 28px;
+    overflow: hidden;
+    isolation: isolate;
+    text-decoration: none;
+    color: var(--fg);
+    background: color-mix(in oklab, var(--accent) 7%, #0d0b16);
+    border: 1px solid color-mix(in oklab, var(--accent) 28%, transparent);
+    transition: border-color 0.4s;
+  }
+  & a:hover {
+    border-color: color-mix(in oklab, var(--accent) 80%, white 10%);
+  }
+  /* spotlight: gradiente radial posicionado por --mx/--my (setadas no pointermove) */
+  & a::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(
+      420px circle at var(--mx) var(--my),
+      color-mix(in oklab, var(--accent) 38%, transparent),
+      transparent 60%
+    );
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  & a:hover::before {
+    opacity: 1;
+  }
+  & h3 {
+    margin: 0;
+    font: 800 clamp(2.4rem, 4vw, 3.6rem) / 0.95 var(--display);
+    font-stretch: 80%;
+    letter-spacing: -0.03em;
+    transform: translateZ(40px);
+  }
+}
+.lumen-card__num {
+  position: absolute;
+  top: 24px;
+  left: 28px;
+  font: 500 12px/1 var(--mono);
+  color: var(--accent);
+}
+.lumen-card__tag {
+  margin: 0;
+  font: italic 400 1.5rem/1.1 var(--serif);
+  color: color-mix(in oklab, var(--accent) 70%, white);
+}
+.lumen-card__sum {
+  margin: 4px 0 8px;
+  max-width: 46ch;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.lumen-card ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  & li {
+    padding: 5px 10px;
+    border-radius: 999px;
+    font: 500 11px/1 var(--mono);
+    color: color-mix(in oklab, var(--accent) 60%, white);
+    background: color-mix(in oklab, var(--accent) 14%, transparent);
+  }
+}
+.lumen-card__go {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  color: #0b0818;
+  background: var(--accent);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lumen-card a:hover .lumen-card__go {
+  transform: rotate(45deg) scale(1.12);
+}
+
+/* Arte decorativa de cada card — 100% CSS */
+.lumen-card__art {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.9;
+  pointer-events: none;
+}
+.lumen-art--prisma {
+  background:
+    conic-gradient(from 210deg at 78% 28%, #ff7ac6, #7aa7ff, #7affd9, #ffe27a, #ff7ac6) 100% 0 / 340px 340px no-repeat;
+  mask-image: radial-gradient(circle at 78% 28%, #000 0, transparent 60%);
+  filter: blur(26px) saturate(1.3);
+  opacity: 0.55;
+}
+.lumen-art--tipo::after {
+  content: 'Aa';
+  position: absolute;
+  right: 16px;
+  top: -30px;
+  font: italic 400 15rem/1 var(--serif);
+  color: color-mix(in oklab, var(--accent) 25%, transparent);
+}
+.lumen-art--pulse {
+  background: repeating-linear-gradient(90deg, transparent 0 22px, rgb(62 230 168 / 0.07) 22px 23px),
+    repeating-linear-gradient(0deg, transparent 0 22px, rgb(62 230 168 / 0.07) 22px 23px);
+  mask-image: radial-gradient(circle at 80% 20%, #000, transparent 70%);
+}
+.lumen-art--gravity {
+  background:
+    radial-gradient(circle at 78% 22%, #ffd23f 0 28px, transparent 29px),
+    radial-gradient(circle at 62% 38%, #ff5d8f 0 20px, transparent 21px),
+    radial-gradient(circle at 86% 46%, #4d7cff 0 24px, transparent 25px);
+}
+.lumen-art--orbit {
+  background: radial-gradient(circle at 75% 25%, #fff 0, #6ee7ff 8%, #2563eb 30%, transparent 55%);
+  filter: blur(2px);
+  opacity: 0.6;
+}
+/* Nebula: nuvem de pontos (radial-gradients minúsculos repetidos) */
+.lumen-art--nebula {
+  background:
+    radial-gradient(circle at 70% 30%, rgb(198 255 61 / 0.5), transparent 45%),
+    radial-gradient(circle, rgb(255 255 255 / 0.55) 0 1px, transparent 1.5px) 0 0 / 14px 14px;
+  mask-image: radial-gradient(circle at 72% 28%, #000, transparent 62%);
+}
+/* Mundi: meridianos e paralelos de um globo */
+.lumen-art--mundi {
+  background:
+    radial-gradient(circle at 76% 30%, transparent 0 62px, rgb(217 164 65 / 0.55) 63px 64px, transparent 65px),
+    repeating-radial-gradient(circle at 76% 30%, transparent 0 14px, rgb(217 164 65 / 0.22) 14px 15px);
+  mask-image: radial-gradient(circle at 76% 30%, #000 0, #000 40%, transparent 72%);
+}
+/* Terminal: texto de fósforo com scanlines */
+.lumen-art--terminal {
+  background:
+    repeating-linear-gradient(0deg, transparent 0 3px, rgb(0 0 0 / 0.3) 3px 4px),
+    linear-gradient(90deg, rgb(57 255 136 / 0.22), transparent 70%);
+  mask-image: linear-gradient(180deg, #000, transparent 85%);
+}
+.lumen-art--terminal::after {
+  content: '>_ ls';
+  position: absolute;
+  right: 18px;
+  top: 14px;
+  font: 600 1.5rem/1 'JetBrains Mono Variable', monospace;
+  color: #39ff88;
+  text-shadow: 0 0 10px rgb(57 255 136 / 0.7);
+}
+/* Nativo: papel quadriculado azul Klein */
+.lumen-art--nativo {
+  background:
+    linear-gradient(rgb(47 75 255 / 0.28) 1px, transparent 1px) 0 0 / 22px 22px,
+    linear-gradient(90deg, rgb(47 75 255 / 0.28) 1px, transparent 1px) 0 0 / 22px 22px;
+  mask-image: radial-gradient(circle at 80% 20%, #000, transparent 70%);
+}
+
+/* ───────────── STACK sticky ───────────── */
+.lumen-stack__box {
+  display: grid;
+  gap: 0;
+}
+.lumen-stack__sticky {
+  position: sticky;
+  height: 62vh;
+  min-height: 420px;
+  padding-bottom: 24px;
+}
+.lumen-stack__card {
+  --c: #8b5cf6;
+  position: relative;
+  height: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr auto;
+  column-gap: clamp(20px, 4vw, 64px);
+  padding: clamp(24px, 4vw, 56px);
+  border-radius: 32px;
+  overflow: hidden;
+  transform-origin: 50% 0;
+  background:
+    radial-gradient(90% 120% at 100% 0%, color-mix(in oklab, var(--c) 40%, transparent), transparent 60%),
+    color-mix(in oklab, var(--c) 12%, #0b0a14);
+  border: 1px solid color-mix(in oklab, var(--c) 40%, transparent);
+
+  & h3 {
+    grid-column: 2;
+    margin: 0;
+    font: 800 clamp(2rem, 5vw, 4.4rem) / 1 var(--display);
+    font-stretch: 82%;
+    letter-spacing: -0.03em;
+  }
+  & p {
+    grid-column: 2;
+    max-width: 52ch;
+    margin: 14px 0 0;
+    color: rgb(242 240 250 / 0.78);
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+  & ul {
+    grid-column: 1 / -1;
+    align-self: end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  & li {
+    padding: 9px 14px;
+    border-radius: 999px;
+    font: 500 12.5px/1 var(--mono);
+    background: rgb(255 255 255 / 0.08);
+    border: 1px solid rgb(255 255 255 / 0.12);
+  }
+}
+.lumen-stack__n {
+  grid-row: 1 / 3;
+  font: 800 clamp(3rem, 9vw, 8rem) / 0.9 var(--display);
+  font-stretch: 78%;
+  color: transparent;
+  -webkit-text-stroke: 1.5px color-mix(in oklab, var(--c) 80%, white);
+}
+.lumen-stack__dim {
+  position: absolute;
+  inset: 0;
+  background: #07060d;
+  pointer-events: none;
+}
+
+/* ───────────── FOOTER ───────────── */
+.lumen-footer {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: clamp(100px, 16vw, 220px) 24px clamp(160px, 20vw, 260px);
+  text-align: center;
+  background: radial-gradient(60% 60% at 50% 100%, rgb(124 58 237 / 0.35), transparent);
+
+  & h2 {
+    margin: 0 0 12px;
+    max-width: 12ch;
+    font: 800 clamp(3rem, 10vw, 9rem) / 0.9 var(--display);
+    font-stretch: 80%;
+    letter-spacing: -0.04em;
+    text-wrap: balance;
+  }
+  & h2 em {
+    color: #c4b5fd;
+  }
+  & p {
+    max-width: 52ch;
+    margin: 0 0 28px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  & .lumen-eyebrow {
+    margin-bottom: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .lumen-hero__scroll {
+    display: none;
+  }
+  .lumen-stack__card {
+    grid-template-columns: 1fr;
+  }
+  .lumen-stack__n {
+    grid-row: auto;
+    font-size: 3rem;
+  }
+  .lumen-stack__card h3,
+  .lumen-stack__card p {
+    grid-column: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lumen-hero__scroll span,
+  .lumen-chip i {
+    animation: none;
+  }
+  .lumen-title,
+  .lumen-sub,
+  .lumen-reveal {
+    opacity: 1;
+  }
+}

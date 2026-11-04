@@ -1,0 +1,57 @@
+.cursor,
+.cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  pointer-events: none;
+  mix-blend-mode: difference;
+  will-change: transform;
+}
+
+.cursor__ring {
+  position: absolute;
+  inset: 0;
+  width: 38px;
+  height: 38px;
+  margin: -19px 0 0 -19px;
+  border-radius: 50%;
+  border: 1.5px solid #fff;
+  background: transparent;
+  transition:
+    width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    margin 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.25s ease,
+    opacity 0.25s ease;
+  opacity: 0;
+}
+.cursor[data-visible='true'] .cursor__ring {
+  opacity: 1;
+}
+.cursor[data-hot='true'] .cursor__ring {
+  width: 72px;
+  height: 72px;
+  margin: -36px 0 0 -36px;
+  background: #fff;
+}
+.cursor[data-down='true'] .cursor__ring {
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+}
+
+.cursor-dot {
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+@media (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .cursor,
+  .cursor-dot {
+    display: none;
+  }
+}

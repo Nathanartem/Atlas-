@@ -1,0 +1,481 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   nebula.css — estilos da página 07 (Nebula)
+   ═══════════════════════════════════════════════════════════════════════════
+   @tech CSS @scope (estilos isolados sem prefixar tudo)
+   Num SPA o CSS de uma página continua carregado nas outras. `@scope (.nebula)` faz TODAS as regras
+   abaixo valerem só dentro de <main class="nebula"> — por isso podemos usar seletores curtos
+   (`h1`, `section`, `button`) sem vazar para as demais páginas, a dock ou o painel de técnicas.
+   Dentro do bloco, `:scope` é o próprio .nebula.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@scope (.nebula) {
+  :scope {
+    --ink: #e8ecff;
+    --muted: rgb(232 236 255 / 0.62);
+    --line: rgb(255 255 255 / 0.12);
+    --accent: #c6ff3d;
+
+    position: relative;
+    isolation: isolate; /* contexto de empilhamento próprio: o canvas (z-index -1) fica acima do fundo preto daqui */
+    min-height: 100svh;
+    background: #000;
+    color: var(--ink);
+    font-family: 'Inter Variable', system-ui, sans-serif;
+    overflow-x: clip;
+  }
+
+  /* Canvas fixo cobrindo a viewport inteira, atrás do conteúdo */
+  .nebula-stage {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+  }
+  .nebula-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ───────── Hero ───────── */
+  .nebula-hero {
+    min-height: 100svh;
+    display: grid;
+    align-content: center;
+    justify-items: start;
+    gap: 18px;
+    padding: 110px clamp(20px, 6vw, 96px) 140px;
+  }
+  .nebula-eyebrow {
+    margin: 0;
+    font: 500 12px/1 'JetBrains Mono Variable', monospace;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  /* @tech text-box: trim para alinhar o título pela altura das maiúsculas
+     `text-box: trim-both cap alphabetic` remove o espaço vazio acima das maiúsculas e abaixo da
+     linha de base, deixando o título alinhado de verdade às margens (Chrome/Edge 133+, Safari 18.2+;
+     onde não existe, apenas sobra um pouco de respiro). */
+  h1 {
+    margin: 0;
+    font: 200 clamp(4.5rem, 19vw, 17rem) / 0.9 'Inter Variable', sans-serif;
+    letter-spacing: -0.06em;
+    text-box: trim-both cap alphabetic;
+    background: linear-gradient(180deg, #fff 30%, rgb(255 255 255 / 0.15));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .nebula-lede {
+    max-width: 52ch;
+    margin: 0;
+    font-size: clamp(1rem, 1.5vw, 1.2rem);
+    line-height: 1.6;
+    color: rgb(232 236 255 / 0.78);
+    text-wrap: pretty;
+    /* halo escuro: mantém o texto legível sobre as partículas mais claras */
+    text-shadow: 0 1px 14px rgb(0 0 0 / 0.95), 0 0 3px rgb(0 0 0 / 0.8);
+
+    & b {
+      color: var(--ink);
+      font-weight: 600;
+    }
+  }
+
+  /* HUD */
+  .nebula-hud {
+    display: flex;
+    gap: 28px;
+    margin: 6px 0 0;
+    text-shadow: 0 1px 12px rgb(0 0 0 / 0.95);
+
+    & div {
+      display: grid;
+      gap: 4px;
+    }
+    & dt {
+      font: 500 10.5px/1 'JetBrains Mono Variable', monospace;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    & dd {
+      margin: 0;
+      font: 500 1.5rem/1 'JetBrains Mono Variable', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    & dd[data-status='webgpu'] {
+      color: var(--accent);
+    }
+    & dd[data-status='canvas2d'] {
+      color: #ffb454;
+    }
+  }
+  .nebula-warn {
+    max-width: 60ch;
+    margin: 0;
+    padding: 12px 16px;
+    border: 1px solid rgb(255 180 84 / 0.4);
+    border-radius: 12px;
+    background: rgb(255 180 84 / 0.08);
+    font-size: 0.9rem;
+    line-height: 1.5;
+
+    & small {
+      display: block;
+      margin-top: 4px;
+      font: 400 11px/1.4 'JetBrains Mono Variable', monospace;
+      color: var(--muted);
+    }
+  }
+
+  /* Painel de controles (vidro) */
+  .nebula-panel {
+    display: grid;
+    gap: 16px;
+    width: min(100%, 560px);
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: rgb(8 8 12 / 0.55);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+
+    & fieldset {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      min-width: 0;
+    }
+    & legend {
+      padding: 0;
+      margin-bottom: 8px;
+      font: 500 10.5px/1 'JetBrains Mono Variable', monospace;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+  }
+  .nebula-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    & button,
+    & li {
+      padding: 8px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--ink);
+      font: 500 13px/1 'Inter Variable', sans-serif;
+      cursor: pointer;
+      transition:
+        background 0.2s,
+        border-color 0.2s,
+        color 0.2s;
+    }
+    & button:hover {
+      border-color: rgb(255 255 255 / 0.4);
+    }
+    & button[aria-pressed='true'] {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0a0d00;
+    }
+    &.nebula-chips--static li {
+      cursor: default;
+      font: 400 11.5px/1 'JetBrains Mono Variable', monospace;
+      color: var(--muted);
+    }
+  }
+  .nebula-sliders {
+    display: grid;
+    gap: 10px;
+
+    & label {
+      display: grid;
+      grid-template-columns: 96px 1fr 44px;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+    }
+    & span {
+      color: var(--muted);
+    }
+    & output {
+      text-align: right;
+      font: 500 12px/1 'JetBrains Mono Variable', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    & input[type='range'] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+  }
+
+  /* ───────── Seções ───────── */
+  .nebula-section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 90px clamp(20px, 5vw, 48px);
+
+    & h2 {
+      max-width: 22ch;
+      margin: 14px 0 36px;
+      font: 300 clamp(2rem, 4.6vw, 3.6rem) / 1.05 'Inter Variable', sans-serif;
+      letter-spacing: -0.035em;
+      text-wrap: balance;
+      text-shadow: 0 2px 22px rgb(0 0 0 / 0.95), 0 0 4px rgb(0 0 0 / 0.7);
+    }
+    & code {
+      font-family: 'JetBrains Mono Variable', monospace;
+      font-size: 0.85em;
+      color: var(--accent);
+    }
+  }
+  .nebula-muted {
+    color: var(--muted);
+  }
+
+  /* Pipeline: 4 cartões ligados por uma linha */
+  .nebula-flow {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+
+    & li {
+      position: relative;
+      display: grid;
+      align-content: start;
+      gap: 10px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgb(8 8 12 / 0.6);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    /* seta entre cartões (só em telas largas, onde ficam lado a lado) */
+    & li:not(:last-child)::after {
+      content: '→';
+      position: absolute;
+      top: 50%;
+      right: -14px;
+      z-index: 1;
+      translate: 0 -50%;
+      color: var(--accent);
+      font-size: 18px;
+    }
+    @media (max-width: 760px) {
+      & li::after {
+        display: none;
+      }
+    }
+    & h3 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+      font: 600 1.15rem/1 'Inter Variable', sans-serif;
+    }
+    & h3 i {
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #0a0d00;
+      font: 700 12px/1 'JetBrains Mono Variable', monospace;
+      font-style: normal;
+    }
+    & p {
+      margin: 0;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+  }
+  .nebula-flow__tag {
+    font: 500 10.5px/1 'JetBrains Mono Variable', monospace;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  /* Visualizador de código */
+  .nebula-code {
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: rgb(6 6 10 / 0.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    overflow: hidden;
+
+    & [role='tablist'] {
+      display: flex;
+      align-items: stretch;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--line);
+    }
+    & [role='tab'] {
+      display: grid;
+      gap: 3px;
+      padding: 14px 20px;
+      border: 0;
+      border-right: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      font: 500 13px/1 'JetBrains Mono Variable', monospace;
+      text-align: left;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    & [role='tab'] small {
+      font: 400 10.5px/1 'Inter Variable', sans-serif;
+      opacity: 0.7;
+    }
+    & [role='tab'][aria-selected='true'] {
+      color: var(--ink);
+      background: rgb(255 255 255 / 0.05);
+      box-shadow: inset 0 -2px 0 var(--accent);
+    }
+    & pre {
+      max-height: 560px;
+      margin: 0;
+      padding: 20px;
+      overflow: auto;
+      font: 400 12.5px/1.65 'JetBrains Mono Variable', monospace;
+      tab-size: 2;
+      color: #cdd6f4;
+    }
+  }
+  .nebula-code__lines {
+    margin-left: auto;
+    align-self: center;
+    padding: 0 18px;
+    font: 400 11px/1 'JetBrains Mono Variable', monospace;
+    color: var(--muted);
+  }
+
+  /* Cores do realce (classes geradas por highlight.tsx) */
+  .wgsl-comment {
+    color: #6c7a96;
+    font-style: italic;
+  }
+  .wgsl-attr {
+    color: #f5c2e7;
+  }
+  .wgsl-keyword {
+    color: #cba6f7;
+  }
+  .wgsl-type {
+    color: #89dceb;
+  }
+  .wgsl-number {
+    color: #fab387;
+  }
+  .wgsl-fn {
+    color: #a6e3a1;
+  }
+
+  /* Relatório da GPU */
+  .nebula-report {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px 0;
+    padding: 28px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: rgb(8 8 12 / 0.6);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    & > div {
+      min-width: 0;
+      padding: 22px 4px 8px;
+    }
+    & > div + div {
+      border-top: 1px solid var(--line);
+      margin-top: 8px;
+      padding-top: 28px;
+    }
+    & h3 {
+      margin: 0 0 16px;
+      font: 500 10.5px/1 'JetBrains Mono Variable', monospace;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    & table {
+      width: 100%;
+      border-collapse: collapse;
+      font: 400 12px/1.4 'JetBrains Mono Variable', monospace;
+    }
+    & th,
+    & td {
+      padding: 7px 0;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      font-weight: 400;
+    }
+    & th {
+      color: var(--muted);
+    }
+    & td {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+  .nebula-report__name {
+    grid-column: 1 / -1;
+    margin: 0;
+    font: 300 1.6rem/1.2 'Inter Variable', sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  .nebula-footer {
+    padding: 40px clamp(20px, 5vw, 48px) 160px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.9rem;
+
+    & code {
+      font-family: 'JetBrains Mono Variable', monospace;
+      color: var(--accent);
+    }
+  }
+
+  @media (min-width: 900px) {
+    .nebula-report {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+      gap: 12px 56px;
+    }
+    .nebula-report > div + div {
+      border-top: 0;
+      margin-top: 0;
+      padding-top: 22px;
+      border-left: 1px solid var(--line);
+      padding-left: 40px;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .nebula-sliders label {
+      grid-template-columns: 82px 1fr 40px;
+    }
+    .nebula-hud {
+      gap: 18px;
+    }
+  }
+}

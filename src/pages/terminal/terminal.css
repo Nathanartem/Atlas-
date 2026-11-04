@@ -1,0 +1,190 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   terminal.css — texto de fósforo dentro do <atlas-crt>
+   ═══════════════════════════════════════════════════════════════════════════
+   Divisão de responsabilidades
+    • crt-element.ts (Shadow DOM): moldura, vidro, scanlines, vinheta, flicker, power-on
+    • este arquivo (DOM normal): o TEXTO — cor, brilho, aberração cromática, layout das linhas
+   A cor vem de --crt-tint, definida no <main class="term"> (inline, pelo comando `theme`).
+   ═══════════════════════════════════════════════════════════════════════════ */
+.term {
+  --tint: var(--crt-tint, #39ff88);
+  display: grid;
+  place-items: center;
+  min-height: 100svh;
+  padding: 24px clamp(10px, 4vw, 48px) 110px; /* 110px de baixo: espaço para o dock */
+  background:
+    radial-gradient(80% 60% at 50% 40%, #11161a 0%, #07090b 70%, #030405 100%);
+  color: var(--tint);
+  font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
+}
+
+/* @tech ::part() + custom properties atravessando o Shadow DOM
+   O elemento expõe `part="screen|glass|bezel"`; aqui a PÁGINA (fora do shadow) dimensiona o componente
+   sem conhecer o CSS interno. Já `--crt-tint` entra no shadow porque custom properties herdam através dele. */
+.term-crt {
+  width: min(1100px, 100%);
+  height: min(760px, calc(100svh - 150px));
+  min-height: 420px;
+}
+.term-crt::part(screen) {
+  display: grid;
+  /* UMA linha com altura fixa = altura do vidro (minmax(0,1fr)): sem isso a linha "auto" cresceria com a saída
+     do terminal e empurraria os atalhos para fora do quadro */
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.term-screen {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: 100%;
+  min-height: 0;
+  padding: clamp(12px, 2vw, 24px);
+  cursor: text;
+  font-size: clamp(12.5px, 1.35vw, 15.5px);
+  line-height: 1.5;
+
+  /* @tech Brilho de fósforo e aberração cromática só com text-shadow
+     Três sombras sobrepostas: (1) halo na cor do fósforo; (2) fantasma vermelho 1px à direita;
+     (3) fantasma ciano 1px à esquerda. É a "falha de convergência" dos tubos CRT, sem JavaScript. */
+  text-shadow:
+    0 0 6px color-mix(in oklab, var(--tint) 65%, transparent),
+    1px 0 0 rgb(255 40 90 / 0.28),
+    -1px 0 0 rgb(0 210 255 / 0.28);
+}
+
+/* chuva de caracteres atrás do texto */
+.term-matrix {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.38;
+  pointer-events: none;
+}
+
+.term-scroll {
+  position: relative;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--tint) 45%, transparent) transparent;
+}
+
+.term-out {
+  display: grid;
+}
+.term-line,
+.term-row {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+/* "chave   valor" alinhados em duas colunas */
+.term-row {
+  display: grid;
+  grid-template-columns: minmax(12ch, 24ch) 1fr;
+  gap: 2ch;
+
+  & span:first-child {
+    color: color-mix(in oklab, var(--tint) 70%, #fff 0%);
+    font-weight: 700;
+  }
+  & span:last-child {
+    color: color-mix(in oklab, var(--tint) 82%, #000);
+  }
+}
+.tone-dim {
+  opacity: 0.55;
+}
+.tone-accent {
+  color: #fff;
+  font-weight: 700;
+}
+.tone-error {
+  color: #ff6b6b;
+  text-shadow: 0 0 6px rgb(255 107 107 / 0.6);
+}
+.tone-ok {
+  color: color-mix(in oklab, var(--tint) 60%, #fff);
+}
+
+.term-prompt {
+  color: #fff;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.term-form {
+  display: flex;
+  align-items: baseline;
+  gap: 1ch;
+
+  & input {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-shadow: inherit;
+    caret-color: var(--tint);
+    /* caret em bloco, como num terminal de verdade (ignorado onde não houver suporte) */
+    caret-shape: block;
+  }
+}
+
+.term-donut {
+  margin: 0.4em 0;
+  font: inherit;
+  line-height: 1.05;
+  letter-spacing: 0;
+  color: color-mix(in oklab, var(--tint) 80%, #fff);
+  overflow: hidden;
+}
+
+/* Atalhos (chips) */
+.term-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px dashed color-mix(in oklab, var(--tint) 35%, transparent);
+
+  & button {
+    padding: 6px 10px;
+    border: 1px solid color-mix(in oklab, var(--tint) 50%, transparent);
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.86em;
+    text-shadow: inherit;
+    cursor: pointer;
+    transition:
+      background 0.15s,
+      color 0.15s;
+  }
+  & button:hover:not(:disabled),
+  & button:focus-visible {
+    background: var(--tint);
+    color: #031208;
+    text-shadow: none;
+    outline: none;
+  }
+  & button:disabled {
+    opacity: 0.35;
+    cursor: wait;
+  }
+}
+
+@media (max-width: 640px) {
+  .term-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+    margin-bottom: 0.35em;
+  }
+}
