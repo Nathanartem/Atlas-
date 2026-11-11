@@ -2,7 +2,7 @@ import '@fontsource-variable/inter/opsz.css'
 import '@fontsource-variable/unbounded/wght.css'
 
 import { motion, useSpring } from 'motion/react'
-import { useEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { getAnalyser, pads, unlockAudio } from './audio.ts'
 import { Playground } from './Playground.tsx'
 
@@ -141,20 +141,54 @@ function Pads() {
 
 /* ───────────────────── Adesivos arrastáveis (drag + inércia do Motion) ───────────────────── */
 // (as técnicas desta seção estão marcadas dentro de <Stickers/>, no <motion.article>)
-const stickers = [
-  { t: 'Springs', d: 'Física de mola: rigidez, amortecimento e massa em vez de durações fixas.', c: '#ffd23f', x: 6, y: 8, r: -6, w: 260 },
-  { t: 'Inércia', d: 'Solte com velocidade e o elemento continua deslizando até parar.', c: '#4d7cff', x: 38, y: 4, r: 4, w: 250 },
-  { t: 'Limites elásticos', d: 'dragConstraints + dragElastic: bate na borda e volta.', c: '#3ddc84', x: 68, y: 12, r: -3, w: 250 },
-  { t: 'Sombras duras', d: 'box-shadow sem blur + borda grossa = neo-brutalismo.', c: '#ffffff', x: 12, y: 52, r: 5, w: 270 },
-  { t: 'Z-index dinâmico', d: 'O adesivo tocado vai para a frente da pilha.', c: '#ff8a3d', x: 46, y: 46, r: -5, w: 240 },
-  { t: 'Pointer Events', d: 'Um único modelo para mouse, toque e caneta.', c: '#a56bff', x: 72, y: 56, r: 3, w: 240 },
+const stickerPalette = ['#ffd23f', '#4d7cff', '#3ddc84', '#ffffff', '#ff8a3d', '#a56bff', '#ff6bb5']
+
+type Note = { id: string; t: string; d: string; c: string; x: number; y: number; r: number; w: number }
+
+const starterNotes: Note[] = [
+  { id: 's1', t: 'Springs', d: 'Física de mola: rigidez, amortecimento e massa em vez de durações fixas.', c: '#ffd23f', x: 6, y: 8, r: -6, w: 260 },
+  { id: 's2', t: 'Inércia', d: 'Solte com velocidade e o elemento continua deslizando até parar.', c: '#4d7cff', x: 38, y: 4, r: 4, w: 250 },
+  { id: 's3', t: 'Limites elásticos', d: 'dragConstraints + dragElastic: bate na borda e volta.', c: '#3ddc84', x: 68, y: 12, r: -3, w: 250 },
+  { id: 's4', t: 'Sombras duras', d: 'box-shadow sem blur + borda grossa = neo-brutalismo.', c: '#ffffff', x: 12, y: 52, r: 5, w: 270 },
+  { id: 's5', t: 'Z-index dinâmico', d: 'O adesivo tocado vai para a frente da pilha.', c: '#ff8a3d', x: 46, y: 46, r: -5, w: 240 },
+  { id: 's6', t: 'Pointer Events', d: 'Um único modelo para mouse, toque e caneta.', c: '#a56bff', x: 72, y: 56, r: 3, w: 240 },
 ]
 
 function Stickers() {
   const board = useRef<HTMLDivElement>(null)
   const z = useRef(10)
+  const [notes, setNotes] = useState(starterNotes)
+
+  const add = () => {
+    setNotes((list) => {
+      const i = list.length
+      return [
+        ...list,
+        {
+          id: crypto.randomUUID(),
+          t: 'Novo',
+          d: '',
+          c: stickerPalette[i % stickerPalette.length]!,
+          x: 10 + (i % 4) * 16,
+          y: 14 + (i % 3) * 18,
+          r: (i % 7) - 3,
+          w: 240,
+        },
+      ]
+    })
+  }
 
   return (
+    <div>
+      <div className="mb-4 flex justify-end">
+        <button
+          type="button"
+          onClick={add}
+          className="cursor-pointer border-[3px] border-black bg-white px-4 py-2 font-chunk text-sm font-black uppercase shadow-[4px_4px_0_#000] hover:-translate-y-0.5"
+        >
+          + Adesivo
+        </button>
+      </div>
     <div
       ref={board}
       className="relative h-[780px] w-full overflow-hidden border-[3px] border-black bg-white bg-[radial-gradient(#0000002e_1.5px,transparent_1.5px)] bg-[size:22px_22px] shadow-[8px_8px_0_#000] sm:h-[620px]"
@@ -170,9 +204,9 @@ function Stickers() {
           @tech z-index dinâmico
           `onPointerDown` incrementa um contador (`z.current`) e grava no `zIndex` do cartão tocado: o último a ser
           pego sempre fica por cima, como papéis numa mesa. */}
-      {stickers.map((s, i) => (
+      {notes.map((s, i) => (
         <motion.article
-          key={s.t}
+          key={s.id}
           drag
           dragConstraints={board}
           dragElastic={0.14}
@@ -180,24 +214,40 @@ function Stickers() {
           initial={{ y: -420, rotate: s.r + 40, opacity: 0 }}
           whileInView={{ y: 0, rotate: s.r, opacity: 1 }}
           viewport={{ once: true, margin: '-12%' }}
-          transition={{ type: 'spring', stiffness: 150, damping: 12, mass: 1.1, delay: i * 0.1 }}
+          transition={{ type: 'spring', stiffness: 150, damping: 12, mass: 1.1, delay: Math.min(i, 6) * 0.1 }}
           whileDrag={{ scale: 1.08, rotate: 0 }}
           whileHover={{ scale: 1.03 }}
           onPointerDown={(e) => (e.currentTarget.style.zIndex = String(++z.current))}
           style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.w, background: s.c, maxWidth: '70%' } as CSSProperties}
           className="absolute cursor-grab touch-none border-[3px] border-black p-4 shadow-[6px_6px_0_#000] active:cursor-grabbing"
         >
-          <h3 className="font-chunk text-lg font-black uppercase">{s.t}</h3>
+          <button
+            type="button"
+            aria-label="Apagar adesivo"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setNotes((list) => list.filter((n) => n.id !== s.id))}
+            className="absolute top-2 right-2 grid size-7 cursor-pointer place-items-center border-2 border-black bg-white text-sm leading-none font-black"
+          >
+            ×
+          </button>
+          <input
+            defaultValue={s.t}
+            aria-label="Título do adesivo"
+            onPointerDown={(e) => e.stopPropagation()}
+            className="w-[calc(100%-2.2rem)] bg-transparent font-chunk text-lg font-black uppercase outline-none"
+          />
           <textarea
             defaultValue={s.d}
             rows={3}
-            aria-label={`Escreva no adesivo ${s.t}`}
+            placeholder="Escreva aqui…"
+            aria-label="Texto do adesivo"
             onPointerDown={(e) => e.stopPropagation()}
             className="mt-2 w-full resize-none bg-transparent text-[13px] leading-snug font-medium text-black/80 outline-none placeholder:text-black/35"
           />
         </motion.article>
       ))}
-      <p className="pointer-events-none absolute right-4 bottom-3 font-mono text-[11px] font-bold text-black/50">escreva no texto · arraste pelo título</p>
+      <p className="pointer-events-none absolute right-4 bottom-3 font-mono text-[11px] font-bold text-black/50">escreva no texto · arraste pelo título · × apaga</p>
+    </div>
     </div>
   )
 }

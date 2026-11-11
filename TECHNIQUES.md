@@ -175,11 +175,11 @@ Tags: `Matter.js` `Web Audio` `Canvas 2D` `Springs`
 | 12 | **Escala pentatônica** | Cada corpo toca uma nota da escala — qualquer colisão soa musical. | `src/pages/gravity/audio.ts:52` |
 | 13 | **Osciloscópio com AnalyserNode** | Dados de domínio do tempo desenhados em canvas, pausando fora da tela. | `src/pages/gravity/Gravity.tsx:23` |
 | 14 | **Pads jogáveis por toque e teclado** | Q W E R / A S D F disparam sons; estado visual por `data-lit`. | `src/pages/gravity/Gravity.tsx:93` |
-| 15 | **Drag com inércia e limites elásticos** | `drag`, `dragConstraints`, `dragElastic` e `dragTransition` (power/timeConstant/bounce). | `src/pages/gravity/Gravity.tsx:162` |
-| 16 | **z-index dinâmico** | O adesivo tocado sobe para o topo da pilha. | `src/pages/gravity/Gravity.tsx:170` |
-| 17 | **Entrada com spring (queda)** | `whileInView` + spring com baixa amortização cria “quique”. | `src/pages/gravity/Gravity.tsx:167` |
-| 18 | **Carta holográfica** | Tilt por springs + foil (`repeating-linear-gradient` posicionado por CSS vars) com `mix-blend-mode: color-dodge/overlay`. | `src/pages/gravity/Gravity.tsx:206` |
-| 19 | **Camadas com translateZ** | Texto da carta em 3 profundidades (`transform-style: preserve-3d`). | `src/pages/gravity/Gravity.tsx:256` |
+| 15 | **Drag com inércia e limites elásticos** | `drag`, `dragConstraints`, `dragElastic` e `dragTransition` (power/timeConstant/bounce). | `src/pages/gravity/Gravity.tsx:196` |
+| 16 | **z-index dinâmico** | O adesivo tocado sobe para o topo da pilha. | `src/pages/gravity/Gravity.tsx:204` |
+| 17 | **Entrada com spring (queda)** | `whileInView` + spring com baixa amortização cria “quique”. | `src/pages/gravity/Gravity.tsx:201` |
+| 18 | **Carta holográfica** | Tilt por springs + foil (`repeating-linear-gradient` posicionado por CSS vars) com `mix-blend-mode: color-dodge/overlay`. | `src/pages/gravity/Gravity.tsx:256` |
+| 19 | **Camadas com translateZ** | Texto da carta em 3 profundidades (`transform-style: preserve-3d`). | `src/pages/gravity/Gravity.tsx:306` |
 | 20 | **Neo-brutalismo com Tailwind** | Sombras duras, bordas 3px, `data-[grab=true]:`, `text-stroke` e valores arbitrários. | `src/pages/gravity/Playground.tsx:435` |
 | 21 | **Loops pausados fora da tela** | IntersectionObserver liga/desliga física, osciloscópio e render. | `src/pages/gravity/Playground.tsx:404` |
 
@@ -319,14 +319,14 @@ Tags: `Web Components` `Shadow DOM` `ASCII 3D` `CRT`
 | 4 | **Custom Element no React 19 (atributos e slot)** | React 19 passa strings como atributos em elementos customizados; filhos entram no `<slot>`. | `src/pages/terminal/Terminal.tsx:230` |
 | 5 | **::part() + custom properties atravessando o Shadow DOM** | A página dimensiona o componente por `::part(screen)` e troca a cor do fósforo com `--crt-tint`. | `src/pages/terminal/terminal.css:21` |
 | 6 | **Brilho de fósforo e aberração cromática só com text-shadow** | Três sombras: halo na cor do fósforo + fantasmas vermelho e ciano de 1px. | `src/pages/terminal/terminal.css:47` |
-| 7 | **Registro extensível de comandos (objeto nome → { help, run })** | Adicionar uma chave cria o comando, a linha do `help` e a sugestão de Tab. | `src/pages/terminal/commands.ts:91` |
-| 8 | **Parser de linha de comando com aspas (regex + matchAll)** | `echo "olá mundo"` → ["echo", "olá mundo"]. | `src/pages/terminal/commands.ts:242` |
-| 9 | **Autocompletar por Tab com prefixo comum** | Completa comandos e argumentos (páginas, temas); com ambiguidade lista as opções. | `src/pages/terminal/commands.ts:266` |
+| 7 | **Registro extensível de comandos (objeto nome → { help, run })** | Adicionar uma chave cria o comando, a linha do `help` e a sugestão de Tab. | `src/pages/terminal/commands.ts:93` |
+| 8 | **Parser de linha de comando com aspas (regex + matchAll)** | `echo "olá mundo"` → ["echo", "olá mundo"]. | `src/pages/terminal/commands.ts:266` |
+| 9 | **Autocompletar por Tab com prefixo comum** | Completa comandos e argumentos (páginas, temas); com ambiguidade lista as opções. | `src/pages/terminal/commands.ts:290` |
 | 10 | **Histórico de comandos com ↑/↓, Tab e Ctrl+L** | Índice de histórico + rascunho preservado; Ctrl+L limpa, Ctrl+C descarta a linha. | `src/pages/terminal/Terminal.tsx:190` |
 | 11 | **Sequência de boot assíncrona e cancelável** | Linhas entram por timeouts encadeados; qualquer tecla pula a animação; cleanup cancela os timers (StrictMode-safe). | `src/pages/terminal/Terminal.tsx:103` |
 | 12 | **Navegação programática com View Transition** | `navigate(path, { viewTransition: true })` aciona a mesma transição circular do dock. | `src/pages/terminal/Terminal.tsx:158` |
-| 13 | **package.json importado como módulo (comando stack)** | Lista de bibliotecas e versões lida do `package.json` real, sem duplicar nada. | `src/pages/terminal/commands.ts:157` |
-| 14 | **Detecção de hardware do navegador (neofetch)** | hardwareConcurrency, deviceMemory, userAgentData, tela, tema, fuso e nome da GPU via WEBGL_debug_renderer_info. | `src/pages/terminal/commands.ts:66` |
+| 13 | **package.json importado como módulo (comando stack)** | Lista de bibliotecas e versões lida do `package.json` real, sem duplicar nada. | `src/pages/terminal/commands.ts:181` |
+| 14 | **Detecção de hardware do navegador (neofetch)** | hardwareConcurrency, deviceMemory, userAgentData, tela, tema, fuso e nome da GPU via WEBGL_debug_renderer_info. | `src/pages/terminal/commands.ts:68` |
 | 15 | **Toro 3D em ASCII (z-buffer + iluminação)** | Pontos do toro → rotação → perspectiva → z-buffer por célula → rampa de caracteres pela luminância. | `src/pages/terminal/donut.ts:22` |
 | 16 | **Chuva de caracteres em canvas com rastro por fade** | Retângulo preto translúcido por frame; cabeças que reiniciam aleatoriamente dessincronizam as colunas. | `src/pages/terminal/matrix.ts:14` |
 | 17 | **Saída de terminal acessível (role log)** | `role="log"` implica aria-live polite: leitores de tela anunciam só o que for acrescentado. | `src/pages/terminal/Terminal.tsx:238` |

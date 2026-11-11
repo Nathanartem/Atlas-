@@ -14,7 +14,9 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 import { pages, type PageMeta } from '../../data/pages.ts'
-import { shellTechniques, techniques, totalTechniques } from '../../data/techniques.ts'
+import { techDetails } from '../../data/tech-details.ts'
+import { shellTechniques, techniques, totalTechniques, type Technique } from '../../data/techniques.ts'
+import { spotLook } from '../../shell/spotlight.ts'
 import pkg from '../../../package.json'
 
 /* ───────────────────────── 1. TIPOS ───────────────────────── */
@@ -91,6 +93,23 @@ const QUOTES = [
 // @tech Registro extensível de comandos (objeto nome → { help, run })
 // O `help` e o autocompletar percorrem este mesmo objeto: adicionar uma chave cria o comando, a ajuda
 // e a sugestão de Tab de uma vez.
+function explainTechnique(t: Technique, n: number, total: number, wherePage: string): OutLine[] {
+  const note = techDetails[t.name]
+  const how = note?.detail ?? ''
+  const loc = note?.file ? `${note.file}:${note.line}` : t.where
+  const out: OutLine[] = [
+    text(`${wherePage}   ${String(n).padStart(2, '0')} / ${String(total).padStart(2, '0')}`, 'dim'),
+    text(t.name, 'accent'),
+    row('o que é', t.what),
+  ]
+  if (how) out.push(row('como', how))
+  out.push(row('código', loc))
+  if (t.where && t.where !== loc) out.push(row('arquivo', t.where))
+  out.push(row('na página', spotLook(t.spot)))
+  out.push(text('No botão { } Técnicas, clique neste nome para ver o bloco iluminado.', 'dim'))
+  return out
+}
+
 export const commands: Record<string, Command> = {
   help: {
     help: 'lista os comandos',
@@ -137,21 +156,26 @@ export const commands: Record<string, Command> = {
   },
 
   explain: {
-    help: 'detalha uma técnica (o que é e onde está no código)',
-    usage: 'explain <página> <n>',
+    help: 'explica uma técnica: o que é, como foi feita, onde está no código e na página',
+    usage: 'explain <página|shell> <n>',
     run: (args) => {
-      const p = findPage(args[0])
+      const shell = /^(shell|casca)$/i.test(args[0] ?? '')
+      const p = shell ? undefined : findPage(args[0])
       const n = Number(args[1])
-      const list = p ? (techniques[p.id] ?? []) : []
-      if (!p || !Number.isInteger(n) || n < 1 || n > list.length) return [text('uso: explain <página> <n>   (n vem de `techniques <página>`)', 'error')]
-      const t = list[n - 1]
-      return [text(t.name, 'accent'), text(t.what), row('onde', t.where)]
+      const list: Technique[] = shell ? shellTechniques : p ? (techniques[p.id] ?? []) : []
+      if ((!shell && !p) || !Number.isInteger(n) || n < 1 || n > list.length) {
+        return [text('uso: explain <página|shell> <n>   (n vem de `techniques` ou `shell`)', 'error')]
+      }
+      return explainTechnique(list[n - 1], n, list.length, shell ? 'casca compartilhada' : `${p!.number} · ${p!.name}`)
     },
   },
 
   shell: {
     help: 'técnicas da casca compartilhada (dock, transições…)',
-    run: () => shellTechniques.map((t, i) => row(String(i + 1).padStart(2, '0'), t.name)),
+    run: () => [
+      ...shellTechniques.map((t, i) => row(String(i + 1).padStart(2, '0'), t.name)),
+      text('use: explain shell <n> para ver os detalhes', 'dim'),
+    ],
   },
 
   // @tech package.json importado como módulo (comando stack)
@@ -272,7 +296,10 @@ export function complete(input: string): { value: string; options: string[] } {
 
   let pool: string[] = []
   if (idx === 0) pool = Object.keys(commands)
-  else if (idx === 1 && PAGE_ARG_COMMANDS.has(parts[0]?.toLowerCase())) pool = pages.map((p) => p.id)
+  else if (idx === 1 && PAGE_ARG_COMMANDS.has(parts[0]?.toLowerCase())) {
+    pool = pages.map((p) => p.id)
+    if (parts[0]?.toLowerCase() === 'explain') pool = [...pool, 'shell']
+  }
   else if (idx === 1 && parts[0]?.toLowerCase() === 'theme') pool = Object.keys(TINTS)
 
   const options = pool.filter((c) => c.startsWith(prefix.toLowerCase()))

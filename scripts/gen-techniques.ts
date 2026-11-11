@@ -54,5 +54,18 @@ push()
 table(shellTechniques)
 
 writeFileSync(new URL('../TECHNIQUES.md', import.meta.url), lines.join('\n'))
+
+// Texto dos comentários @tech, para o comando `explain` do terminal. Não edite à mão.
+const notes = catalog().map((t) => {
+  const marks = byName.get(t.name) ?? []
+  const detail = [...new Set(marks.map((m) => m.detail).filter(Boolean))].join(' ')
+  const first = marks[0]
+  return `  ${JSON.stringify(t.name)}: { file: ${JSON.stringify(first?.file ?? '')}, line: ${first?.line ?? 0}, detail: ${JSON.stringify(detail)} },`
+})
+writeFileSync(
+  new URL('../src/data/tech-details.ts', import.meta.url),
+  `// Gerado por \`npm run docs\`. Não edite à mão — o texto vem dos comentários @tech.\nexport const techDetails: Record<string, { file: string; line: number; detail: string }> = {\n${notes.join('\n')}\n}\n`,
+)
+
 const missing = catalog().filter((t) => !byName.has(t.name)).length
 console.log(`TECHNIQUES.md gerado — ${total} técnicas${missing ? `, ${missing} SEM marcador (rode npm run check:docs)` : ', todas localizadas no código'}`)
