@@ -473,7 +473,13 @@ export function Playground({ onReady }: { onReady?: (api: Api) => void }) {
         <button type="button" className={`${btn} bg-[#3ddc84]`} onClick={() => api.current?.spawn(8)}>
           + Bolas {balls > 0 && <span className="opacity-60">({balls})</span>}
         </button>
-        <button type="button" className={`${btn} ${sound ? 'bg-[#4d7cff] text-white' : ''}`} onClick={() => api.current?.setSound(!sound)} aria-pressed={sound}>
+        <button
+          type="button"
+          className={btn}
+          style={sound ? { backgroundColor: '#4d7cff', color: '#141210' } : undefined}
+          onClick={() => api.current?.setSound(!sound)}
+          aria-pressed={sound}
+        >
           {sound ? '♪ Som on' : '♪ Som off'}
         </button>
         <button type="button" className={btn} onClick={() => api.current?.reset()}>
